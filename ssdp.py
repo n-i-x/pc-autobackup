@@ -1,59 +1,68 @@
 #!/usr/bin/python
- 
-# Python program that can send out M-SEARCH messages using SSDP (in server
-# mode), or listen for SSDP messages (in client mode).
- 
+#
+# Copyright 2013 Jeff Rebeiro (jrebeiro@gmail.com) All rights reserved
+# Simple SSDP Server for PC Autobackup
+
+__author__ = 'jrebeiro@gmail.com (Jeff Rebeiro)'
+
+import re
+import socket
 import sys
-from twisted.internet import reactor, task
+import uuid
+from twisted.internet import reactor
+from twisted.internet import task
 from twisted.internet.protocol import DatagramProtocol
- 
-SSDP_ADDR = '239.255.255.250'
-SSDP_PORT = 1900
- 
-MS = 'M-SEARCH * HTTP/1.1\r\nHOST: %s:%d\r\nMAN: "ssdp:discover"\r\nMX: 2\r\nST: ssdp:all\r\n\r\n' % (SSDP_ADDR, SSDP_PORT)
- 
-class Base(DatagramProtocol):
-    def datagramReceived(self, datagram, address):
-        if address[0] == '10.0.1.120':
-          first_line = datagram.rsplit('\r\n')[0]
-          print "Received %s from %r" % (first_line, address, )
-          print "Contents:"
-          print datagram
- 
-    def stop(self):
-        pass
- 
-class Server(Base):
-    def __init__(self, iface):
-        self.iface = iface
-        task.LoopingCall(self.send_msearch).start(6) # every 6th seconds
- 
-    def send_msearch(self):
-        port = reactor.listenUDP(0, self, interface=self.iface)
-        print "Sending M-SEARCH..."
-        port.write(MS, (SSDP_ADDR, SSDP_PORT))
-        reactor.callLater(2.5, port.stopListening) # MX + a wait margin
- 
-class Client(Base):
-    def __init__(self, iface):
-        self.iface = iface
-        self.ssdp = reactor.listenMulticast(SSDP_PORT, self, listenMultiple=True)
-        self.ssdp.setLoopbackMode(1)
-        self.ssdp.joinGroup(SSDP_ADDR, interface=iface)
- 
-    def stop(self):
-        self.ssdp.leaveGroup(SSDP_ADDR, interface=self.iface)
-        self.ssdp.stopListening()
- 
-def main(mode, iface):
-    klass = Server if mode == 'server' else Client
-    obj = klass(iface)
-    reactor.addSystemEventTrigger('before', 'shutdown', obj.stop)
- 
+
+pattern = r'^M-SEARCH.*HOST: (.*):(\d+).*urn:schemas-upnp-org:device:(\w+):1.*'
+MSEARCH = re.compile(pattern, re.DOTALL)
+
+SSDP_RESPONSE = ('HTTP/1.1 200 OK\r\n'
+                 'CACHE-CONTROL: max-age = 1800\r\n'
+                 'EXT:\r\n'
+                 'LOCATION: http://%s:52235/DMS/SamsungDmsDesc.xml\r\n'
+                 'SERVER: MS-Windows/XP UPnP/1.0 PROTOTYPE/1.0\r\n'
+                 'ST: urn:schemas-upnp-org:device:MediaServer:1\r\n'
+                 'USN: %s::urn:schemas-upnp-org:device:MediaServer:1\r\n')
+
+UUID = uuid.uuid4()
+
+class SSDP(DatagramProtocol):
+
+  def __init__(self, ip_address):
+    self.ip_address = ip_address
+    self.ssdp_address = '239.255.255.250'
+    self.ssdp_port = 1900
+    self.server = reactor.listenMulticast(self.ssdp_port, self,
+                                          listenMultiple=True)
+    self.server.setLoopbackMode(1)
+    self.server.joinGroup(self.ssdp_address, interface=ip_address)
+
+  def datagramReceived(self, datagram, address):
+    m = MSEARCH.match(datagram)
+    if m:
+      print 'Received M-SEARCH for %s from %r' % (m.group(3), address)
+      if m.group(3) == 'MediaServer':
+        self.SendSSDPResponse(address)
+
+  def SendSSDPResponse(self, address):
+    print "Response:"
+    print SSDP_RESPONSE % (address[0], UUID)
+
+  def stop(self):
+    self.server.leaveGroup(self.ssdp_address, interface=self.ip_address)
+    self.server.stopListening()
+
+
+def SSDPReactor(ip_address):
+  ssdp_server = SSDP(ip_address)
+  reactor.addSystemEventTrigger('before', 'shutdown', ssdp_server.stop)
+
+
+def main():
+  ip_address = socket.gethostbyname(socket.gethostname())
+  reactor.callWhenRunning(SSDPReactor, ip_address)
+  reactor.run()
+
+
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print "Usage: %s <server|client> <IP of interface>" % (sys.argv[0], )
-        sys.exit(1)
-    mode, iface = sys.argv[1:]
-    reactor.callWhenRunning(main, mode, iface)
-    reactor.run()
+  main()
