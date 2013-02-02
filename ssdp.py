@@ -3,7 +3,7 @@
 # Copyright 2013 Jeff Rebeiro (jrebeiro@gmail.com) All rights reserved
 # Simple SSDP implementation for PC Autobackup
 
-__author__ = 'jrebeiro@gmail.com (Jeff Rebeiro)'
+__author__ = 'jeff@rebeiro.net (Jeff Rebeiro)'
 
 import ConfigParser
 import os
