@@ -1,11 +1,15 @@
 #!/usr/bin/python
 #
 # Copyright 2013 Jeff Rebeiro (jeff@rebeiro.net) All rights reserved
-# Simple UPNP implementation for PC Autobackup
+# Simple UPNP MediaServer implementation for PC Autobackup
 
 __author__ = 'jeff@rebeiro.net (Jeff Rebeiro)'
 
 import HTMLParser
+
+from twisted.internet import reactor
+from twisted.web.resource import Resource
+from twisted.web.server import Site
 
 import common
 
@@ -55,8 +59,36 @@ DMS_DESC = '''<?xml version="1.0"?>
 </root>'''
 
 
+class MediaServer(Resource):
+
+  isLeaf = True
+
+  def __init__(self):
+    self.config = common.LoadOrCreateConfig()
+
+  def render_GET(self, request):
+    if request.path == '/DMS/SamsungDmsDesc.xml':
+      return self.GetDMSDescription()
+
+  def GetDMSDescription(self):
+    response = DMS_DESC % {'friendly_name': self.config.get('AUTOBACKUP',
+                                                            'server_name'),
+                           'uuid': self.config.get('AUTOBACKUP', 'uuid')}
+    if __name__ == '__main__':
+      print "Response:"
+      print response
+
+    return response
+
+def StartMediaServer():
+  resource = MediaServer()
+  factory = Site(resource)
+  reactor.listenTCP(52235, factory)
+  reactor.run()
+
+
 def main():
-  config = common.LoadOrCreateConfig()
+  StartMediaServer()
 
 
 if __name__ == "__main__":

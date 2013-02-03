@@ -10,14 +10,12 @@ import os
 import socket
 import uuid
 
-# TODO(jrebeiro): Move the CONFIG_FILE variable to the main runnable module
 CONFIG_FILE = os.path.expanduser("~/pc-autobackup.cfg")
 
 
 def LoadOrCreateConfig():
   """Load an existing configuration or create one."""
   config = ConfigParser.RawConfigParser()
-  # TODO(jrebeiro): Move the CONFIG_FILE variable to the main runnable module
   config.read(CONFIG_FILE)
 
   if not config.has_section('AUTOBACKUP'):

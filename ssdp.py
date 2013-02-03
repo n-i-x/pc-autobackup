@@ -51,11 +51,13 @@ class SSDPServer(DatagramProtocol):
     Args:
       address: A tuple of destination IP and Port as strings
     """
-    # TODO(jrebeiro): Make this send the UDP response once the HTTP server is
-    #                 ready.
-    # self.transport.write(SSDP_RESPONSE, address)
-    print "Response:"
-    print SSDP_RESPONSE % (address[0], self.config.get('AUTOBACKUP', 'uuid'))
+    response = SSDP_RESPONSE % (self.config.get('AUTOBACKUP',
+                                                'default_interface'),
+                                self.config.get('AUTOBACKUP', 'uuid'))
+    self.transport.write(response, address)
+    if __name__ == '__main__':
+      print "Response:"
+      print response
 
 
 def StartSSDPServer():
