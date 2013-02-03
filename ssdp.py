@@ -6,14 +6,9 @@
 __author__ = 'jeff@rebeiro.net (Jeff Rebeiro)'
 
 import ConfigParser
-import os
 import re
-import socket
-import sys
-import uuid
 
 from twisted.internet import reactor
-from twisted.internet import task
 from twisted.internet.protocol import DatagramProtocol
 
 import common
@@ -30,18 +25,14 @@ SSDP_RESPONSE = ('HTTP/1.1 200 OK\r\n'
                  'USN: %s::urn:schemas-upnp-org:device:MediaServer:1\r\n')
 
 
-class SSDP(DatagramProtocol):
+class SSDPServer(DatagramProtocol):
 
   def __init__(self):
-    self.config = LoadOrCreateConfig()
-    self.ssdp_address = '239.255.255.250'
-    self.ssdp_port = 1900
-    self.server = reactor.listenMulticast(self.ssdp_port, self,
-                                          listenMultiple=True)
-    self.server.setLoopbackMode(1)
-    self.server.joinGroup(self.ssdp_address,
-                          interface=self.config.get('AUTOBACKUP',
-                                                    'default_interface'))
+    self.config = common.LoadOrCreateConfig()
+
+  def startProtocol(self):
+    self.transport.setTTL(5)
+    self.transport.joinGroup('239.255.255.250')
 
   def datagramReceived(self, datagram, address):
     m = MSEARCH.match(datagram)
@@ -60,28 +51,20 @@ class SSDP(DatagramProtocol):
     Args:
       address: A tuple of destination IP and Port as strings
     """
-    # TODO(jrebeiro): Make this send a UDP response once the HTTP server is
+    # TODO(jrebeiro): Make this send the UDP response once the HTTP server is
     #                 ready.
+    # self.transport.write(SSDP_RESPONSE, address)
     print "Response:"
     print SSDP_RESPONSE % (address[0], self.config.get('AUTOBACKUP', 'uuid'))
 
-  def stop(self):
-    self.server.leaveGroup(self.ssdp_address,
-                           interface=self.config.get('AUTOBACKUP',
-                                                     'default_interface'))
-    self.server.stopListening()
 
-
-def SSDPReactor():
-  """Callback function for twisted.internet.reactor."""
-  ssdp_server = SSDP()
-  reactor.addSystemEventTrigger('before', 'shutdown', ssdp_server.stop)
+def StartSSDPServer():
+  reactor.listenMulticast(1900, SSDPServer())
+  reactor.run()
 
 
 def main():
-  config = common.LoadOrCreateConfig()
-  reactor.callWhenRunning(SSDPReactor)
-  reactor.run()
+  StartSSDPServer()
 
 
 if __name__ == "__main__":

@@ -7,6 +7,8 @@ __author__ = 'jeff@rebeiro.net (Jeff Rebeiro)'
 
 import ConfigParser
 import os
+import socket
+import uuid
 
 # TODO(jrebeiro): Move the CONFIG_FILE variable to the main runnable module
 CONFIG_FILE = os.path.expanduser("~/pc-autobackup.cfg")
