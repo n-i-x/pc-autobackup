@@ -13,6 +13,10 @@ from twisted.web.server import Site
 
 import common
 
+CREATE_OBJ = re.compile(r'<u:CreateObject xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1">.*<Elements>(.*)</Elements>', re.DOTALL)
+CREATE_OBJ_DETAILS = re.compile(r'&lt;dc:title&gt;(.*)&lt;/dc:title&gt;.*protocolInfo="\*:\*:(.*):DLNA.ORG_PN=JPEG_LRG;DLNA.ORG_CI=0"')
+
+X_BACKUP = re.compile(r'<u:X_BACKUP_(\w+) xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1">')
 X_BACKUP_RESPONSE = '''<?xml version="1.0"?>
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
   <s:Body>
@@ -68,9 +72,27 @@ class MediaServer(Resource):
 
   def render_GET(self, request):
     if request.path == '/DMS/SamsungDmsDesc.xml':
-      return self.GetDMSDescription()
+      return self.GetDMSDescriptionResponse()
 
-  def GetDMSDescription(self):
+  def render_POST(self, request):
+    if request.path == '/upnp/control/ContentDirectory1':
+      return self.GetContentDirectoryResponse(request.content.read())
+
+  def GetContentDirectoryResponse(self, content):
+    if X_BACKUP.search(content):
+      action = X_BACKUP.search(content).group(1)
+      response = X_BACKUP_RESPONSE % action
+      print "Response:"
+      print response
+    if CREATE_OBJECT.search(content):
+      obj_didl = CREATE_OBJ.search(content).group(1)
+      obj_details = CREATE_OBJ_DETAILS.search(obj_didl).groups()
+      obj_name = obj_details[0]
+      obj_type = obj_details[1]
+
+    return response
+
+  def GetDMSDescriptionResponse(self):
     response = DMS_DESC % {'friendly_name': self.config.get('AUTOBACKUP',
                                                             'server_name'),
                            'uuid': self.config.get('AUTOBACKUP', 'uuid')}
@@ -79,6 +101,7 @@ class MediaServer(Resource):
       print response
 
     return response
+
 
 def StartMediaServer():
   resource = MediaServer()
