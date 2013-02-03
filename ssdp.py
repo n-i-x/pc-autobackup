@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright 2013 Jeff Rebeiro (jrebeiro@gmail.com) All rights reserved
+# Copyright 2013 Jeff Rebeiro (jeff@rebeiro.net) All rights reserved
 # Simple SSDP implementation for PC Autobackup
 
 __author__ = 'jeff@rebeiro.net (Jeff Rebeiro)'
@@ -11,12 +11,12 @@ import re
 import socket
 import sys
 import uuid
+
 from twisted.internet import reactor
 from twisted.internet import task
 from twisted.internet.protocol import DatagramProtocol
 
-# TODO(jrebeiro): Move the CONFIG_FILE variable to the main runnable module
-CONFIG_FILE = os.path.expanduser("~/pc-autobackup.cfg")
+import common
 
 pattern = r'^M-SEARCH.*HOST: (.*):(\d+).*urn:schemas-upnp-org:device:(\w+):1.*'
 MSEARCH = re.compile(pattern, re.DOTALL)
@@ -40,7 +40,7 @@ class SSDP(DatagramProtocol):
                                           listenMultiple=True)
     self.server.setLoopbackMode(1)
     self.server.joinGroup(self.ssdp_address,
-                          interface=self.config.get('SSDP',
+                          interface=self.config.get('AUTOBACKUP',
                                                     'default_interface'))
 
   def datagramReceived(self, datagram, address):
@@ -63,30 +63,13 @@ class SSDP(DatagramProtocol):
     # TODO(jrebeiro): Make this send a UDP response once the HTTP server is
     #                 ready.
     print "Response:"
-    print SSDP_RESPONSE % (address[0], self.config.get('SSDP', 'uuid'))
+    print SSDP_RESPONSE % (address[0], self.config.get('AUTOBACKUP', 'uuid'))
 
   def stop(self):
     self.server.leaveGroup(self.ssdp_address,
-                           interface=self.config.get('SSDP',
+                           interface=self.config.get('AUTOBACKUP',
                                                      'default_interface'))
     self.server.stopListening()
-
-
-def LoadOrCreateConfig():
-  """Load an existing configuration or create one."""
-  config = ConfigParser.RawConfigParser()
-  # TODO(jrebeiro): Move the CONFIG_FILE variable to the main runnable module
-  config.read(CONFIG_FILE)
-
-  if not config.has_section('SSDP'):
-    config.add_section('SSDP')
-    config.set('SSDP', 'uuid', uuid.uuid4())
-    config.set('SSDP', 'default_interface',
-               socket.gethostbyname(socket.gethostname()))
-    with open(CONFIG_FILE, 'wb') as config_file:
-      config.write(config_file)
-
-  return config
 
 
 def SSDPReactor():
@@ -96,8 +79,7 @@ def SSDPReactor():
 
 
 def main():
-  # TODO(jrebeiro): Move this code to a main runnable module
-  config = LoadOrCreateConfig()
+  config = common.LoadOrCreateConfig()
   reactor.callWhenRunning(SSDPReactor)
   reactor.run()
 
