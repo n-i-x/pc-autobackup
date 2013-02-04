@@ -27,8 +27,9 @@ SSDP_RESPONSE = ('HTTP/1.1 200 OK\r\n'
 
 class SSDPServer(DatagramProtocol):
 
-  def __init__(self):
+  def __init__(self, debug=False):
     self.config = common.LoadOrCreateConfig()
+    self.debug = debug
 
   def startProtocol(self):
     self.transport.setTTL(5)
@@ -37,11 +38,10 @@ class SSDPServer(DatagramProtocol):
   def datagramReceived(self, datagram, address):
     m = MSEARCH.match(datagram)
     if m:
-      # TODO(jrebeiro): Make this print in debug mode when the main runnable
-      #                 module is created and implements optparse
       # TODO(jrebeiro): Verify that MediaServer is the only discovery request
       #                 PCAutoBackup responds to.
-      print 'Received M-SEARCH for %s from %r' % (m.group(3), address)
+      if self.debug:
+        print 'Received M-SEARCH for %s from %r' % (m.group(3), address)
       if m.group(3) == 'MediaServer':
         self.SendSSDPResponse(address)
 
@@ -55,18 +55,18 @@ class SSDPServer(DatagramProtocol):
                                                 'default_interface'),
                                 self.config.get('AUTOBACKUP', 'uuid'))
     self.transport.write(response, address)
-    if __name__ == '__main__':
+    if self.debug:
       print "Response:"
       print response
 
 
-def StartSSDPServer():
-  reactor.listenMulticast(1900, SSDPServer())
+def StartSSDPServer(debug=False):
+  reactor.listenMulticast(1900, SSDPServer(debug=debug))
   reactor.run()
 
 
 def main():
-  StartSSDPServer()
+  StartSSDPServer(debug=True)
 
 
 if __name__ == "__main__":

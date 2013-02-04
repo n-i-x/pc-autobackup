@@ -20,10 +20,12 @@ def LoadOrCreateConfig():
 
   if not config.has_section('AUTOBACKUP'):
     config.add_section('AUTOBACKUP')
-    config.set('AUTOBACKUP', 'uuid', uuid.uuid4())
+    config.set('AUTOBACKUP', 'backup_dir',
+               os.path.expanduser('~/PCAutoBackup'))
     config.set('AUTOBACKUP', 'default_interface',
                socket.gethostbyname(socket.gethostname()))
     config.set('AUTOBACKUP', 'server_name', '[PC]AutoBackup')
+    config.set('AUTOBACKUP', 'uuid', uuid.uuid4())
     with open(CONFIG_FILE, 'wb') as config_file:
       config.write(config_file)
 
