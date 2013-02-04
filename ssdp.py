@@ -6,6 +6,7 @@
 __author__ = 'jeff@rebeiro.net (Jeff Rebeiro)'
 
 import ConfigParser
+import logging
 import re
 
 from twisted.internet import reactor
@@ -27,9 +28,8 @@ SSDP_RESPONSE = ('HTTP/1.1 200 OK\r\n'
 
 class SSDPServer(DatagramProtocol):
 
-  def __init__(self, debug=False):
+  def __init__(self):
     self.config = common.LoadOrCreateConfig()
-    self.debug = debug
 
   def startProtocol(self):
     self.transport.setTTL(5)
@@ -40,8 +40,7 @@ class SSDPServer(DatagramProtocol):
     if m:
       # TODO(jrebeiro): Verify that MediaServer is the only discovery request
       #                 PCAutoBackup responds to.
-      if self.debug:
-        print 'Received M-SEARCH for %s from %r' % (m.group(3), address)
+      logging.debug('Received M-SEARCH for %s from %r', m.group(3), address)
       if m.group(3) == 'MediaServer':
         self.SendSSDPResponse(address)
 
@@ -55,18 +54,18 @@ class SSDPServer(DatagramProtocol):
                                                 'default_interface'),
                                 self.config.get('AUTOBACKUP', 'uuid'))
     self.transport.write(response, address)
-    if self.debug:
-      print "Response:"
-      print response
+    logging.debug('Response: %s', response)
 
 
-def StartSSDPServer(debug=False):
-  reactor.listenMulticast(1900, SSDPServer(debug=debug))
+def StartSSDPServer():
+  logging.info('SSDPServer started')
+  reactor.listenMulticast(1900, SSDPServer())
   reactor.run()
 
 
 def main():
-  StartSSDPServer(debug=True)
+  logging.basicConfig(filename='ssdp.log', level=logging.DEBUG)
+  StartSSDPServer()
 
 
 if __name__ == "__main__":

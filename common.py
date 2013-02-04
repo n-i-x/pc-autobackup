@@ -6,6 +6,7 @@
 __author__ = 'jeff@rebeiro.net (Jeff Rebeiro)'
 
 import ConfigParser
+import logging
 import os
 import socket
 import uuid
@@ -19,6 +20,7 @@ def LoadOrCreateConfig():
   config.read(CONFIG_FILE)
 
   if not config.has_section('AUTOBACKUP'):
+    logging.info('Creating configuration file %s', CONFIG_FILE)
     config.add_section('AUTOBACKUP')
     config.set('AUTOBACKUP', 'backup_dir',
                os.path.expanduser('~/PCAutoBackup'))

@@ -6,12 +6,14 @@
 __author__ = 'jeff@rebeiro.net (Jeff Rebeiro)'
 
 import HTMLParser
+import logging
 import os
 import random
 import re
 import string
 
 from twisted.internet import reactor
+from twisted.web.error import NoResource
 from twisted.web.resource import Resource
 from twisted.web.server import Site
 
@@ -94,6 +96,8 @@ class Backup(object):
 
   def CreateObject(self, obj_name, obj_date, obj_type, obj_size):
     (parent_id, obj_id) = self._GenerateObjectID(obj_date)
+    logging.debug('Creating Backup Object for %s (type:%s size:%s)', obj_name,
+                  obj_type, obj_size)
     self.backup_objects[obj_id] = {'obj_name': obj_name,
                                    'obj_date': obj_date,
                                    'obj_type': obj_type,
@@ -117,10 +121,12 @@ class Backup(object):
                            obj_details['obj_date'])
 
     if not os.path.isdir(obj_dir):
+      logging.info('Creating output dir %s', obj_dir)
       os.makedirs(obj_dir)
 
     obj_file = os.path.join(obj_dir, obj_details['obj_name'])
 
+    logging.info('Saving %s', obj_file)
     with open(obj_file, 'wb') as f:
       f.write(data)
 
@@ -131,44 +137,45 @@ class MediaServer(Resource):
 
   isLeaf = True
 
-  def __init__(self, debug=False):
+  def __init__(self):
     self.config = common.LoadOrCreateConfig()
-    self.debug = debug
 
   def render_GET(self, request):
-    if self.debug:
-      print 'Request headers:'
-      print request.getAllHeaders()
+    logging.debug('Request Headers: %s', request.getAllHeaders())
     if request.path == '/DMS/SamsungDmsDesc.xml':
-      return self.GetDMSDescriptionResponse()
+      logging.info('New connection from %s', request.getHeader('user-agent'))
+      response = self.GetDMSDescriptionResponse()
     else:
-      print 'Unhandled GET request: %s' % request.path
+      logging.error('Unhandled GET request: %s', request.path)
+      return NoResource()
+
+    logging.debug('Response: %s', response)
+    return response
 
   def render_POST(self, request):
-    if self.debug:
-      print 'Request args:'
-      print request.args
-      print 'Request headers:'
-      print request.getAllHeaders()
+    logging.debug('Request args: %s', request.args)
+    logging.debug('Request headers: %s', request.getAllHeaders())
+
     if request.path == '/cd/content':
-      return self.ReceiveUpload(request)
-    if request.path == '/upnp/control/ContentDirectory1':
-      return self.GetContentDirectoryResponse(request)
+      response = self.ReceiveUpload(request)
+    elif request.path == '/upnp/control/ContentDirectory1':
+      response = self.GetContentDirectoryResponse(request)
     else:
-      print 'Unhandled POST request: %s' % request.path
+      logging.error('Unhandled POST request: %s', request.path)
+      return NoResource()
+
+    logging.debug('Response: %s', response)
+    return response
 
   def GetContentDirectoryResponse(self, request):
-    soapaction = request.getHeader('soapaction')
+    logging.debug('Request content: %s', request.content.read())
+    request.content.seek(0)
 
-    response = ''
+    soapaction = request.getHeader('soapaction')
 
     if soapaction == X_BACKUP_START:
       response = X_BACKUP_RESPONSE % 'START'
-      if self.debug:
-        print 'Response:'
-        print response
-    if soapaction == CREATE_OBJ:
-      request.content.seek(0)
+    elif soapaction == CREATE_OBJ:
       soap_xml = request.content.read()
 
       m = CREATE_OBJ_DIDL.match(soap_xml)
@@ -188,43 +195,44 @@ class MediaServer(Resource):
             'obj_type': obj_type,
             'obj_size': obj_size,
             'parent_id': obj_details['parent_id']}
-    if soapaction == X_BACKUP_DONE:
+    elif soapaction == X_BACKUP_DONE:
       response = X_BACKUP_RESPONSE % 'DONE'
+    else:
+      logging.error('Unhandled soapaction: %s', soapaction)
+      return NoResource()
 
-    if self.debug:
-      print 'Response:'
-      print response
     return response
 
   def GetDMSDescriptionResponse(self):
     response = DMS_DESC_RESPONSE % {
         'friendly_name': self.config.get('AUTOBACKUP', 'server_name'),
         'uuid': self.config.get('AUTOBACKUP', 'uuid')}
-    if self.debug:
-      print 'Response:'
-      print response
 
     return response
 
   def ReceiveUpload(self, request):
     response = ''
+
     obj_id = request.args['didx'][0].split('=')[1]
     backup = Backup()
 
     data = request.content.read()
     backup.WriteObject(obj_id, data)
+
     return response
 
 
-def StartMediaServer(debug=False):
-  resource = MediaServer(debug=debug)
+def StartMediaServer():
+  logging.info('MediaServer started')
+  resource = MediaServer()
   factory = Site(resource)
   reactor.listenTCP(52235, factory)
   reactor.run()
 
 
 def main():
-  StartMediaServer(debug=True)
+  logging.basicConfig(filename='mediaserver.log', level=logging.DEBUG)
+  StartMediaServer()
 
 
 if __name__ == '__main__':
