@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Copyright 2013 Jeff Rebeiro (jeff@rebeiro.net) All rights reserved
 # Common functions for PC Autobackup
 
@@ -15,7 +13,7 @@ CONFIG_FILE = os.path.expanduser("~/pc_autobackup.cfg")
 LOG_DATE_FMT = '[%m/%d/%Y %I:%M %p]'
 LOG_FMT = '%(asctime)s[%(name)s] %(levelname)s:%(message)s'
 
-LOG_DEFAULTS = {'level': logging.WARN,
+LOG_DEFAULTS = {'level': logging.INFO,
                 'format': LOG_FMT,
                 'datefmt': LOG_DATE_FMT}
 
@@ -30,11 +28,17 @@ def LoadOrCreateConfig():
     config.add_section('AUTOBACKUP')
     config.set('AUTOBACKUP', 'backup_dir',
                os.path.expanduser('~/PCAutoBackup'))
-    config.set('AUTOBACKUP', 'default_interface',
-               socket.gethostbyname(socket.gethostname()))
-    config.set('AUTOBACKUP', 'server_name', '[PC]AutoBackup')
+    try:
+      config.set('AUTOBACKUP', 'default_interface',
+                 socket.gethostbyname(socket.gethostname()))
+    except socket.error:
+      logging.error('Unable to determine IP address. Please set manually!')
+      config.set('AUTOBACKUP', 'default_interface', '127.0.0.1')
+    config.set('AUTOBACKUP', 'server_name',
+               '[%s]AutoBackup' % socket.gethostname())
     config.set('AUTOBACKUP', 'uuid', uuid.uuid4())
     with open(CONFIG_FILE, 'wb') as config_file:
       config.write(config_file)
 
   return config
+  

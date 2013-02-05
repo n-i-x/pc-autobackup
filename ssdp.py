@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # Copyright 2013 Jeff Rebeiro (jeff@rebeiro.net) All rights reserved
 # Simple SSDP implementation for PC Autobackup
@@ -41,10 +41,10 @@ class SSDPServer(DatagramProtocol):
     if m:
       # TODO(jrebeiro): Verify that MediaServer is the only discovery request
       #                 PCAutoBackup responds to.
-      self.logger.debug('Received M-SEARCH for %s from %s', m.group(3),
+      self.logger.debug('Received SSDP M-SEARCH for %s from %s', m.group(3),
                         address[0])
       if m.group(3) == 'MediaServer':
-        self.logger.info('Received discovery request from %s', address[0])
+        self.logger.info('Sending SSDP response to %s', address[0])
         self.SendSSDPResponse(address)
 
   def SendSSDPResponse(self, address):

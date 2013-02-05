@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # Copyright 2013 Jeff Rebeiro (jeff@rebeiro.net) All rights reserved
 # Main runnable for PC Autobackup
@@ -9,6 +9,7 @@ import logging
 import optparse
 import platform
 import socket
+import sys
 
 from twisted.internet import reactor
 from twisted.web.server import Site
@@ -20,6 +21,7 @@ import mediaserver
 
 def GetSystemInfo():
   logger = logging.getLogger('PCAutoBackup')
+  logger.debug('Command-line: %s', ' '.join(sys.argv))
   logger.debug('Python Version: %s', platform.python_version())
   logger.debug('System Information (platform): %s', platform.platform())
   logger.debug('System Information (uname): %s', ' '.join(platform.uname()))
@@ -42,17 +44,21 @@ def main():
                     default=False, help='debug output')
   parser.add_option('--log_file', dest='log_file', default='backup.log',
                     help='output log to file', metavar='FILE')
+  parser.add_option('-n', '--name', dest='server_name',
+                    help='change server name', metavar='NAME')
   parser.add_option('-o', '--output_dir', dest='output_dir',
                     help='output directory for files', metavar='DIR')
-  parser.add_option('-v', '--verbose', dest='verbose', action='store_true',
-                    default=False, help='verbose output')
+  parser.add_option('-q', '--quiet', dest='quiet', action='store_true',
+                    default=False, help='only log errors to console')
   (options, args) = parser.parse_args()
 
-  logging_options = common.LOG_DEFAULTS
+  console_logging_options = common.LOG_DEFAULTS.copy()
+  logging_options = common.LOG_DEFAULTS.copy()
 
-  if options.verbose:
-    logging_options['level'] = logging.INFO
+  if options.quiet:
+    console_logging_options['level'] = logging.WARN
   if options.debug:
+    console_logging_options['level'] = logging.DEBUG
     logging_options['level'] = logging.DEBUG
 
   logging_options['filename'] = options.log_file
@@ -60,20 +66,32 @@ def main():
   logging.basicConfig(**logging_options)
 
   console = logging.StreamHandler()
-  console.setLevel(logging_options['level'])
+  console.setLevel(console_logging_options['level'])
   formatter = logging.Formatter('%(asctime)s %(message)s', common.LOG_DATE_FMT)
   console.setFormatter(formatter)
   logging.getLogger('').addHandler(console)
 
   config = common.LoadOrCreateConfig()
+  update_config = False
+
   if options.bind:
     config.set('AUTOBACKUP', 'default_interface', options.bind)
+    update_config = True
   if options.output_dir:
     config.set('AUTOBACKUP', 'backup_dir', options.output_dir)
+    update_config = True
+  if options.server_name:
+    config.set('AUTOBACKUP', 'server_name', options.server_name)
+    update_config = True
+
+  if update_config:
+    with open(common.CONFIG_FILE, 'wb') as config_file:
+      config.write(config_file)
 
   logger = logging.getLogger('PCAutoBackup')
   logger.info('PCAutoBackup started on %s', config.get('AUTOBACKUP',
-                                                        'default_interface'))
+                                                       'default_interface'))
+  logger.info('Server name: %s', config.get('AUTOBACKUP', 'server_name'))
 
   if options.debug:
     GetSystemInfo()

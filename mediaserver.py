@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # Copyright 2013 Jeff Rebeiro (jeff@rebeiro.net) All rights reserved
 # Simple UPNP MediaServer implementation for PC Autobackup
@@ -145,7 +145,11 @@ class MediaServer(Resource):
     self.config = common.LoadOrCreateConfig()
 
   def render_GET(self, request):
-    self.logger.debug('Request Headers: %s', request.getAllHeaders())
+    self.logger.debug('Request args for %s from %s: %s', request.path,
+                      request.getClientIP(), request.args)
+    self.logger.debug('Request headers for %s from %s: %s', request.path,
+                      request.getClientIP(), request.args)
+
     if request.path == '/DMS/SamsungDmsDesc.xml':
       self.logger.info('New connection from %s (%s)',
                        request.getClientIP(),
@@ -153,29 +157,35 @@ class MediaServer(Resource):
       self.clients[request.getClientIP()] = request.getHeader('user-agent')
       response = self.GetDMSDescriptionResponse()
     else:
-      self.logger.error('Unhandled GET request: %s', request.path)
+      self.logger.error('Unhandled GET request from %s: %s',
+                        request.getClientIP(), request.path)
       return NoResource()
 
     self.logger.debug('Response: %s', response)
     return response
 
   def render_POST(self, request):
-    self.logger.debug('Request args: %s', request.args)
-    self.logger.debug('Request headers: %s', request.getAllHeaders())
+    self.logger.debug('Request args for %s from %s: %s', request.path,
+                      request.getClientIP(), request.args)
+    self.logger.debug('Request headers for %s from %s: %s', request.path,
+                      request.getClientIP(), request.args)
 
     if request.path == '/cd/content':
       response = self.ReceiveUpload(request)
     elif request.path == '/upnp/control/ContentDirectory1':
       response = self.GetContentDirectoryResponse(request)
     else:
-      self.logger.error('Unhandled POST request: %s', request.path)
+      self.logger.error('Unhandled POST request from %s: %s',
+                        request.getClientIP(), request.path)
       return NoResource()
 
-    self.logger.debug('Response: %s', response)
+    self.logger.debug('Sending response for %s to %s: %s', request.path,
+                      request.getClientIP(), response)
     return response
 
   def GetContentDirectoryResponse(self, request):
-    self.logger.debug('Request content: %s', request.content.read())
+    self.logger.debug('Request content for %s from %s: %s', request.path,
+                      request.getClientIP(), request.content.read())
     request.content.seek(0)
 
     soapaction = request.getHeader('soapaction')
