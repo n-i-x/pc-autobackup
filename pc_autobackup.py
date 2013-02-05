@@ -41,9 +41,10 @@ def main():
                     help='bind the server to a specific IP',
                     metavar='IP')
   parser.add_option('-d', '--debug', dest='debug', action='store_true',
-                    default=False, help='debug output')
+                    default=False, help='enable debug logging to file')
   parser.add_option('--log_file', dest='log_file', default='backup.log',
-                    help='output log to file', metavar='FILE')
+                    help='change output log file (default: backup.log)',
+                    metavar='FILE')
   parser.add_option('-n', '--name', dest='server_name',
                     help='change server name', metavar='NAME')
   parser.add_option('-o', '--output_dir', dest='output_dir',
@@ -58,7 +59,6 @@ def main():
   if options.quiet:
     console_logging_options['level'] = logging.WARN
   if options.debug:
-    console_logging_options['level'] = logging.DEBUG
     logging_options['level'] = logging.DEBUG
 
   logging_options['filename'] = options.log_file
