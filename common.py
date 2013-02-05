@@ -35,7 +35,7 @@ def LoadOrCreateConfig():
       logging.error('Unable to determine IP address. Please set manually!')
       config.set('AUTOBACKUP', 'default_interface', '127.0.0.1')
     config.set('AUTOBACKUP', 'server_name',
-               '[%s]AutoBackup' % socket.gethostname())
+               '[%s]AutoBackup' % socket.gethostname().split('.')[0])
     config.set('AUTOBACKUP', 'uuid', uuid.uuid4())
     with open(CONFIG_FILE, 'wb') as config_file:
       config.write(config_file)
