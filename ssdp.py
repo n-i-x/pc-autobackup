@@ -29,6 +29,7 @@ SSDP_RESPONSE = ('HTTP/1.1 200 OK\r\n'
 class SSDPServer(DatagramProtocol):
 
   def __init__(self):
+    self.logger = logging.getLogger('SSDPServer')
     self.config = common.LoadOrCreateConfig()
 
   def startProtocol(self):
@@ -40,8 +41,10 @@ class SSDPServer(DatagramProtocol):
     if m:
       # TODO(jrebeiro): Verify that MediaServer is the only discovery request
       #                 PCAutoBackup responds to.
-      logging.debug('Received M-SEARCH for %s from %r', m.group(3), address)
+      self.logger.debug('Received M-SEARCH for %s from %s', m.group(3),
+                        address[0])
       if m.group(3) == 'MediaServer':
+        self.logger.info('Received discovery request from %s', address[0])
         self.SendSSDPResponse(address)
 
   def SendSSDPResponse(self, address):
@@ -54,7 +57,7 @@ class SSDPServer(DatagramProtocol):
                                                 'default_interface'),
                                 self.config.get('AUTOBACKUP', 'uuid'))
     self.transport.write(response, address)
-    logging.debug('Response: %s', response)
+    self.logger.debug('Response: %s', response)
 
 
 def StartSSDPServer():
@@ -64,7 +67,10 @@ def StartSSDPServer():
 
 
 def main():
-  logging.basicConfig(filename='ssdp.log', level=logging.DEBUG)
+  logging_options = common.LOG_DEFAULTS
+  logging_options['filename'] = 'ssdpserver.log'
+  logging_options['level'] = logging.DEBUG
+  logging.basicConfig(**logging_options)
   StartSSDPServer()
 
 

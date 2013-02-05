@@ -85,6 +85,7 @@ class Backup(object):
   backup_objects = {}
 
   def __init__(self):
+    self.logger = logging.getLogger('MediaServer.Backup')
     self.config = common.LoadOrCreateConfig()
 
   def _GenerateObjectID(self, obj_date, length=10):
@@ -96,8 +97,8 @@ class Backup(object):
 
   def CreateObject(self, obj_name, obj_date, obj_type, obj_size):
     (parent_id, obj_id) = self._GenerateObjectID(obj_date)
-    logging.debug('Creating Backup Object for %s (type:%s size:%s)', obj_name,
-                  obj_type, obj_size)
+    self.logger.debug('Creating Backup Object for %s (type:%s size:%s)',
+                      obj_name, obj_type, obj_size)
     self.backup_objects[obj_id] = {'obj_name': obj_name,
                                    'obj_date': obj_date,
                                    'obj_type': obj_type,
@@ -121,59 +122,67 @@ class Backup(object):
                            obj_details['obj_date'])
 
     if not os.path.isdir(obj_dir):
-      logging.info('Creating output dir %s', obj_dir)
+      self.logger.info('Creating output dir %s', obj_dir)
       os.makedirs(obj_dir)
 
     obj_file = os.path.join(obj_dir, obj_details['obj_name'])
 
-    logging.info('Saving %s', obj_file)
+    self.logger.info('Saving %s to %s', obj_details['obj_name'], obj_dir)
     with open(obj_file, 'wb') as f:
       f.write(data)
+    self.logger.info('%s saved successfully', obj_details['obj_name'])
 
     del(self.backup_objects[obj_id])
 
 
 class MediaServer(Resource):
 
+  clients = {}
   isLeaf = True
 
   def __init__(self):
+    self.logger = logging.getLogger('MediaServer')
     self.config = common.LoadOrCreateConfig()
 
   def render_GET(self, request):
-    logging.debug('Request Headers: %s', request.getAllHeaders())
+    self.logger.debug('Request Headers: %s', request.getAllHeaders())
     if request.path == '/DMS/SamsungDmsDesc.xml':
-      logging.info('New connection from %s', request.getHeader('user-agent'))
+      self.logger.info('New connection from %s (%s)',
+                       request.getClientIP(),
+                       request.getHeader('user-agent'))
+      self.clients[request.getClientIP()] = request.getHeader('user-agent')
       response = self.GetDMSDescriptionResponse()
     else:
-      logging.error('Unhandled GET request: %s', request.path)
+      self.logger.error('Unhandled GET request: %s', request.path)
       return NoResource()
 
-    logging.debug('Response: %s', response)
+    self.logger.debug('Response: %s', response)
     return response
 
   def render_POST(self, request):
-    logging.debug('Request args: %s', request.args)
-    logging.debug('Request headers: %s', request.getAllHeaders())
+    self.logger.debug('Request args: %s', request.args)
+    self.logger.debug('Request headers: %s', request.getAllHeaders())
 
     if request.path == '/cd/content':
       response = self.ReceiveUpload(request)
     elif request.path == '/upnp/control/ContentDirectory1':
       response = self.GetContentDirectoryResponse(request)
     else:
-      logging.error('Unhandled POST request: %s', request.path)
+      self.logger.error('Unhandled POST request: %s', request.path)
       return NoResource()
 
-    logging.debug('Response: %s', response)
+    self.logger.debug('Response: %s', response)
     return response
 
   def GetContentDirectoryResponse(self, request):
-    logging.debug('Request content: %s', request.content.read())
+    self.logger.debug('Request content: %s', request.content.read())
     request.content.seek(0)
 
     soapaction = request.getHeader('soapaction')
 
     if soapaction == X_BACKUP_START:
+      self.logger.info('Starting backup for %s (%s)', request.getClientIP(),
+                       self.clients[request.getClientIP()])
       response = X_BACKUP_RESPONSE % 'START'
     elif soapaction == CREATE_OBJ:
       soap_xml = request.content.read()
@@ -196,9 +205,11 @@ class MediaServer(Resource):
             'obj_size': obj_size,
             'parent_id': obj_details['parent_id']}
     elif soapaction == X_BACKUP_DONE:
+      self.logger.info('Backup complete for %s (%s)', request.getClientIP(),
+                       self.clients[request.getClientIP()])
       response = X_BACKUP_RESPONSE % 'DONE'
     else:
-      logging.error('Unhandled soapaction: %s', soapaction)
+      self.logger.error('Unhandled soapaction: %s', soapaction)
       return NoResource()
 
     return response
@@ -231,7 +242,10 @@ def StartMediaServer():
 
 
 def main():
-  logging.basicConfig(filename='mediaserver.log', level=logging.DEBUG)
+  logging_options = common.LOG_DEFAULTS
+  logging_options['filename'] = 'mediaserver.log'
+  logging_options['level'] = logging.DEBUG
+  logging.basicConfig(**logging_options)
   StartMediaServer()
 
 
