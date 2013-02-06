@@ -26,16 +26,19 @@ def LoadOrCreateConfig():
   if not config.has_section('AUTOBACKUP'):
     logging.info('Creating configuration file %s', CONFIG_FILE)
     config.add_section('AUTOBACKUP')
+  if not config.has_option('AUTOBACKUP', 'backup_dir'):
     config.set('AUTOBACKUP', 'backup_dir',
                os.path.expanduser('~/PCAutoBackup'))
+  if not config.has_option('AUTOBACKUP', 'default_interface'):
     try:
       config.set('AUTOBACKUP', 'default_interface',
                  socket.gethostbyname(socket.gethostname()))
     except socket.error:
       logging.error('Unable to determine IP address. Please set manually!')
       config.set('AUTOBACKUP', 'default_interface', '127.0.0.1')
-    config.set('AUTOBACKUP', 'server_name',
-               '[%s]AutoBackup' % socket.gethostname().split('.')[0])
+  if not config.has_option('AUTOBACKUP', 'server_name'):
+    config.set('AUTOBACKUP', 'server_name', '[PC]AutoBackup')
+  if not config.has_option('AUTOBACKUP', 'server_name'):
     config.set('AUTOBACKUP', 'uuid', uuid.uuid4())
     with open(CONFIG_FILE, 'wb') as config_file:
       config.write(config_file)

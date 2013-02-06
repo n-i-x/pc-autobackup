@@ -14,8 +14,8 @@ from twisted.internet.protocol import DatagramProtocol
 
 import common
 
-pattern = r'^M-SEARCH.*HOST: (.*):(\d+).*urn:schemas-upnp-org:device:(\w+):1.*'
-MSEARCH = re.compile(pattern, re.DOTALL)
+MSEARCH = re.compile(r'^M-SEARCH \* HTTP/1.1', re.DOTALL)
+MSEARCH_DATA = re.compile(r'^([^:]+):\s+(.*)')
 
 SSDP_RESPONSE = ('HTTP/1.1 200 OK\r\n'
                  'CACHE-CONTROL: max-age = 1800\r\n'
@@ -41,11 +41,33 @@ class SSDPServer(DatagramProtocol):
     if m:
       # TODO(jrebeiro): Verify that MediaServer is the only discovery request
       #                 PCAutoBackup responds to.
-      self.logger.debug('Received SSDP M-SEARCH for %s from %s', m.group(3),
-                        address[0])
-      if m.group(3) == 'MediaServer':
+      msearch_data = self.ParseSSDPDiscovery(datagram)
+      if msearch_data.get('discovery_type'):
+        self.logger.debug('Received SSDP M-SEARCH for %s from %s',
+                          msearch_data.get('discovery_type'), address[0])
+      else:
+        self.logger.debug('Received SSDP M-SEARCH from %s', address[0])
+
+      if msearch_data.get('discovery_type') == 'MediaServer':
         self.logger.info('Sending SSDP response to %s', address[0])
         self.SendSSDPResponse(address)
+
+  def ParseSSDPDiscovery(self, datagram):
+    parsed_data = {}
+
+    for line in datagram.splitlines():
+      if line.startswith('M-SEARCH'):
+        continue
+
+      m = MSEARCH_DATA.match(line)
+      if m:
+        parsed_data[m.group(1)] = m.group(2)
+
+        # ST: urn:schemas-upnp-org:device:MediaServer:1
+        if m.group(1) == 'ST':
+          parsed_data['discovery_type'] = m.group(2).split(':')[3]
+
+    return parsed_data
 
   def SendSSDPResponse(self, address):
     """Send a response to an SSDP MediaServer discovery request.
