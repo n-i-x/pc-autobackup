@@ -42,14 +42,15 @@ class SSDPServer(DatagramProtocol):
       # TODO(jrebeiro): Verify that MediaServer is the only discovery request
       #                 PCAutoBackup responds to.
       msearch_data = self.ParseSSDPDiscovery(datagram)
+      address_info = ':'.join([str(x) for x in address])
       if msearch_data.get('discovery_type'):
         self.logger.debug('Received SSDP M-SEARCH for %s from %s',
-                          msearch_data.get('discovery_type'), ':'.join(address))
+                          msearch_data.get('discovery_type'), address_info)
       else:
-        self.logger.debug('Received SSDP M-SEARCH from %s', ':'.join(address))
+        self.logger.debug('Received SSDP M-SEARCH from %s', address_info)
 
       if msearch_data.get('discovery_type') == 'MediaServer':
-        self.logger.info('Sending SSDP response to %s', ':'.join(address))
+        self.logger.info('Sending SSDP response to %s', address_info)
         self.SendSSDPResponse(address)
 
   def ParseSSDPDiscovery(self, datagram):
