@@ -38,10 +38,11 @@ def LoadOrCreateConfig():
       config.set('AUTOBACKUP', 'default_interface', '127.0.0.1')
   if not config.has_option('AUTOBACKUP', 'server_name'):
     config.set('AUTOBACKUP', 'server_name', '[PC]AutoBackup')
-  if not config.has_option('AUTOBACKUP', 'server_name'):
+  if not config.has_option('AUTOBACKUP', 'uuid'):
     config.set('AUTOBACKUP', 'uuid', uuid.uuid4())
-    with open(CONFIG_FILE, 'wb') as config_file:
-      config.write(config_file)
+
+  with open(CONFIG_FILE, 'wb') as config_file:
+    config.write(config_file)
 
   return config
   
