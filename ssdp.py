@@ -44,12 +44,12 @@ class SSDPServer(DatagramProtocol):
       msearch_data = self.ParseSSDPDiscovery(datagram)
       if msearch_data.get('discovery_type'):
         self.logger.debug('Received SSDP M-SEARCH for %s from %s',
-                          msearch_data.get('discovery_type'), address[0])
+                          msearch_data.get('discovery_type'), ':'.join(address))
       else:
-        self.logger.debug('Received SSDP M-SEARCH from %s', address[0])
+        self.logger.debug('Received SSDP M-SEARCH from %s', ':'.join(address))
 
       if msearch_data.get('discovery_type') == 'MediaServer':
-        self.logger.info('Sending SSDP response to %s', address[0])
+        self.logger.info('Sending SSDP response to %s', ':'.join(address))
         self.SendSSDPResponse(address)
 
   def ParseSSDPDiscovery(self, datagram):
