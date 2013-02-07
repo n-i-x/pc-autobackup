@@ -10,9 +10,16 @@ import socket
 import uuid
 
 CONFIG_FILE = os.path.expanduser("~/pc_autobackup.cfg")
+DESC_FILE = os.path.join('DLNA_WEB_ROOT', 'SAMSUNGAUTOBACKUPDESC.INI')
+DESC_INI = '''MacAddr=%(mac_address)s
+UDN=uuid:%(uuid)s
+friendlyName=%(server_name)s
+WOLSupport=1
+ServerFlag=1
+'''
+
 LOG_DATE_FMT = '[%m/%d/%Y %I:%M %p]'
 LOG_FMT = '%(asctime)s[%(name)s] %(levelname)s:%(message)s'
-
 LOG_DEFAULTS = {'level': logging.INFO,
                 'format': LOG_FMT,
                 'datefmt': LOG_DATE_FMT}

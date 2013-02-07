@@ -7,9 +7,12 @@ __author__ = 'jeff@rebeiro.net (Jeff Rebeiro)'
 
 import logging
 import optparse
+import os
 import platform
+import re
 import socket
 import sys
+import uuid
 
 from twisted.internet import reactor
 from twisted.web.server import Site
@@ -35,6 +38,28 @@ def GetSystemInfo():
                    config.get(section, option))
 
 
+def UpdateCameraConfig(mountpoint):
+  logger = logging.getLogger('PCAutoBackup')
+  mac_address = hex(uuid.getnode())
+  mac_address = re.findall('..', mac_address)
+  mac_address = ':'.join(mac_address[1:]).upper()
+
+  desc_file = os.path.join(mountpoint, common.DESC_FILE)
+  if os.path.isfile(desc_file):
+    with open(desc_file, 'wb') as f:
+      config = common.LoadOrCreateConfig()
+      ini_params = {'mac_address': mac_address,
+                    'server_name': config.get('AUTOBACKUP', 'server_name'),
+                    'uuid': config.get('AUTOBACKUP', 'uuid')}
+      try:
+        f.write(common.DESC_INI % ini_params)
+        logger.info('Configuration saved successfully')
+      except IOError as e:
+        logger.error('Unable to save configuration: %s', str(e))
+  else:
+    logger.error('Camera configuration %s does not exist!')
+
+
 def main():
   parser = optparse.OptionParser()
   parser.add_option('-b', '--bind', dest='bind',
@@ -51,6 +76,9 @@ def main():
                     help='output directory for files', metavar='DIR')
   parser.add_option('-q', '--quiet', dest='quiet', action='store_true',
                     default=False, help='only log errors to console')
+  parser.add_option('--update_camera', dest='update_camera',
+                    help='update camera with this servers configuration',
+                    metavar='MOUNTPOINT')
   (options, args) = parser.parse_args()
 
   console_logging_options = common.LOG_DEFAULTS.copy()
@@ -87,6 +115,10 @@ def main():
   if update_config:
     with open(common.CONFIG_FILE, 'wb') as config_file:
       config.write(config_file)
+
+  if options.update_camera:
+    UpdateCameraConfig(options.update_camera)
+    sys.exit(0)
 
   logger = logging.getLogger('PCAutoBackup')
   logger.info('PCAutoBackup started on %s', config.get('AUTOBACKUP',
