@@ -38,13 +38,18 @@ def GetSystemInfo():
                    config.get(section, option))
 
 
-def UpdateCameraConfig(mountpoint):
+def UpdateCameraConfig(mountpoint, create_desc_file=False):
   logger = logging.getLogger('PCAutoBackup')
   mac_address = hex(uuid.getnode())
   mac_address = re.findall('..', mac_address)
   mac_address = ':'.join(mac_address[1:]).upper()
 
   desc_file = os.path.join(mountpoint, common.DESC_FILE)
+
+  if create_desc_file:
+    with open(desc_file, 'w+') as f:
+      logging.info('Creating %s', desc_file)
+
   if os.path.isfile(desc_file):
     with open(desc_file, 'wb') as f:
       config = common.LoadOrCreateConfig()
@@ -57,7 +62,7 @@ def UpdateCameraConfig(mountpoint):
       except IOError as e:
         logger.error('Unable to save configuration: %s', str(e))
   else:
-    logger.error('Camera configuration %s does not exist!')
+    logger.error('Camera configuration %s does not exist!', desc_file)
 
 
 def main():
@@ -65,6 +70,9 @@ def main():
   parser.add_option('-b', '--bind', dest='bind',
                     help='bind the server to a specific IP',
                     metavar='IP')
+  parser.add_option('--create_camera_config', dest='create_camera_config',
+                    help='create new camera configuration file',
+                    metavar='MOUNTPOINT')
   parser.add_option('-d', '--debug', dest='debug', action='store_true',
                     default=False, help='enable debug logging to file')
   parser.add_option('--log_file', dest='log_file', default='backup.log',
@@ -115,6 +123,10 @@ def main():
   if update_config:
     with open(common.CONFIG_FILE, 'wb') as config_file:
       config.write(config_file)
+
+  if options.create_camera_config:
+    UpdateCameraConfig(options.create_camera_config, create_desc_file=True)
+    sys.exit(0)
 
   if options.update_camera:
     UpdateCameraConfig(options.update_camera)
