@@ -50,7 +50,6 @@ class SSDPServer(DatagramProtocol):
         self.logger.debug('Received SSDP M-SEARCH from %s', address_info)
 
       if msearch_data.get('discovery_type') == 'MediaServer':
-        self.logger.info('Sending SSDP response to %s', address_info)
         self.SendSSDPResponse(address)
 
   def ParseSSDPDiscovery(self, datagram):
@@ -79,8 +78,11 @@ class SSDPServer(DatagramProtocol):
     response = SSDP_RESPONSE % (self.config.get('AUTOBACKUP',
                                                 'default_interface'),
                                 self.config.get('AUTOBACKUP', 'uuid'))
-    self.transport.write(response, address)
+
+    address_info = ':'.join([str(x) for x in address])
+    self.logger.info('Sending SSDP response to %s', address_info)
     self.logger.debug('Response: %s', response)
+    self.transport.write(response, address)
 
 
 def StartSSDPServer():
