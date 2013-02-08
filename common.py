@@ -6,11 +6,24 @@ __author__ = 'jeff@rebeiro.net (Jeff Rebeiro)'
 import ConfigParser
 import logging
 import os
+import re
 import socket
 import uuid
 
+CAMERA_CONFIG = {
+  'SAMSUNG WB150': {'desc_file': os.path.join('DLNA_WEB_ROOT',
+                                              'SAMSUNGAUTOBACKUPDESC.INI')},
+  'SAMSUNG NX1000': {'desc_file': os.path.join('dlna_web_root',
+                                               'SAMSUNGAutoBackupDESC.ini')}}
 CONFIG_FILE = os.path.expanduser("~/pc_autobackup.cfg")
-DESC_FILE = os.path.join('DLNA_WEB_ROOT', 'SAMSUNGAUTOBACKUPDESC.INI')
+CAMERA_INFO_FILE = [os.path.join('system', 'device.xml'),
+                    os.path.join('SYSTEM', 'DEVICE.XML'),
+                    os.path.join('SYSTEM', 'Device.xml')]
+CAMERA_MODEL = re.compile(r'<BaseModelName\s*value="(.*)"\s*/>')
+
+DESC_SERVER_NAME = re.compile(r'friendlyName\s*=\s*(.*)')
+DESC_UUID = re.compile(r'UDN\s*=\s*uuid:(.*)')
+
 DESC_INI = '''MacAddr=%(mac_address)s
 UDN=uuid:%(uuid)s
 friendlyName=%(server_name)s

@@ -208,6 +208,8 @@ class MediaServer(Resource):
         obj_id = backup.CreateObject(obj_name, obj_date, obj_type, obj_size)
         obj_details = backup.GetObjectDetails(obj_id)
 
+        self.logger.info('Ready to receive %s (%s size:%s)', obj_name, obj_type,
+                         obj_size)
         response = CREATE_OBJ_RESPONSE % {
             'interface': self.config.get('AUTOBACKUP', 'default_interface'),
             'obj_id': obj_id,
