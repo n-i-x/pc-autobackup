@@ -63,9 +63,9 @@ class SSDPServer(DatagramProtocol):
                   'NT: %s' % notify_fields.get('NT', ''),
                   'NTS: %s' % notify_fields.get('NTS', ''),
                   'USN: %s' % notify_fields.get('USN', ''),
-                  'SERVER: MS-Windows/XP UPnP/1.0 PROTOTYPE/1.0',
-                  'CONTENT-LENGTH: 0']
+                  'SERVER: MS-Windows/XP UPnP/1.0 PROTOTYPE/1.0']
 
+    response.append('CONTENT-LENGTH: 0')
     response.append('')
     return '\r\n'.join(response)
 
