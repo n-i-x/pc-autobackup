@@ -17,14 +17,6 @@ import common
 MSEARCH = re.compile(r'^M-SEARCH \* HTTP/1.1', re.DOTALL)
 MSEARCH_DATA = re.compile(r'^([^:]+):\s+(.*)')
 
-SSDP_RESPONSE = ('HTTP/1.1 200 OK\r\n'
-                 'CACHE-CONTROL: max-age = 1800\r\n'
-                 'EXT:\r\n'
-                 'LOCATION: http://%s:52235/DMS/SamsungDmsDesc.xml\r\n'
-                 'SERVER: MS-Windows/XP UPnP/1.0 PROTOTYPE/1.0\r\n'
-                 'ST: urn:schemas-upnp-org:device:MediaServer:1\r\n'
-                 'USN: %s::urn:schemas-upnp-org:device:MediaServer:1\r\n')
-
 
 class SSDPServer(DatagramProtocol):
 
@@ -52,6 +44,31 @@ class SSDPServer(DatagramProtocol):
       if msearch_data.get('discovery_type') == 'MediaServer':
         self.SendSSDPResponse(address)
 
+  def GenerateSSDPResponse(self, response_type, ip_address, uuid,
+                           notify_fields=None):
+    location = 'LOCATION: http://%s:52235/DMS/SamsungDmsDesc.xml' % ip_address
+    if response_type == 'm-search':
+      response = ['HTTP/1.1 200 OK',
+                  'CACHE-CONTROL: max-age = 1800',
+                  'EXT:',
+                  location,
+                  'SERVER: MS-Windows/XP UPnP/1.0 PROTOTYPE/1.0',
+                  'ST: urn:schemas-upnp-org:device:MediaServer:1',
+                  'USN: %s::urn:schemas-upnp-org:device:MediaServer:1' % uuid]
+    elif response_type == 'notify':
+      response = ['NOTIFY * HTTP/1.1',
+                  'HOST: 239.255.255.250:1900',
+                  'CACHE-CONTROL: max-age=1800',
+                  location,
+                  'NT: %s' % notify_fields.get('NT', ''),
+                  'NTS: %s' % notify_fields.get('NTS', ''),
+                  'USN: %s' % notify_fields.get('USN', ''),
+                  'SERVER: MS-Windows/XP UPnP/1.0 PROTOTYPE/1.0',
+                  'CONTENT-LENGTH: 0']
+
+    response.append('')
+    return '\r\n'.join(response)
+
   def ParseSSDPDiscovery(self, datagram):
     parsed_data = {}
 
@@ -75,13 +92,14 @@ class SSDPServer(DatagramProtocol):
     Args:
       address: A tuple of destination IP and Port as strings
     """
-    response = SSDP_RESPONSE % (self.config.get('AUTOBACKUP',
-                                                'default_interface'),
-                                self.config.get('AUTOBACKUP', 'uuid'))
+    response = self.GenerateSSDPResponse('m-search',
+                                         self.config.get('AUTOBACKUP',
+                                                         'default_interface'),
+                                         self.config.get('AUTOBACKUP', 'uuid'))
 
     address_info = ':'.join([str(x) for x in address])
     self.logger.info('Sending SSDP response to %s', address_info)
-    self.logger.debug('Response: %s', response)
+    self.logger.debug('Response: %r', response)
     self.transport.write(response, address)
 
 
