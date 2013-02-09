@@ -38,6 +38,12 @@ LOG_DEFAULTS = {'level': logging.INFO,
                 'datefmt': LOG_DATE_FMT}
 
 
+def GenerateUUID():
+  uuid_prefix = '4a682b0b-0361-dbae-6155'
+  uuid_suffix = str(uuid.uuid4()).split('-')[-1]
+  return '-'.join([uuid_prefix, uuid_suffix])
+
+
 def LoadOrCreateConfig():
   """Load an existing configuration or create one."""
   config = ConfigParser.RawConfigParser()
@@ -59,7 +65,7 @@ def LoadOrCreateConfig():
   if not config.has_option('AUTOBACKUP', 'server_name'):
     config.set('AUTOBACKUP', 'server_name', '[PC]AutoBackup')
   if not config.has_option('AUTOBACKUP', 'uuid'):
-    config.set('AUTOBACKUP', 'uuid', uuid.uuid4())
+    config.set('AUTOBACKUP', 'uuid', GenerateUUID())
 
   with open(CONFIG_FILE, 'wb') as config_file:
     config.write(config_file)
