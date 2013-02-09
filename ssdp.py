@@ -90,7 +90,7 @@ class SSDPServer(DatagramProtocol):
     """Send a response to an SSDP MediaServer discovery request.
 
     Args:
-      address: A tuple of destination IP and Port as strings
+      address: A tuple of destination IP (string) and port (int)
     """
     response = self.GenerateSSDPResponse('m-search',
                                          self.config.get('AUTOBACKUP',
