@@ -41,44 +41,6 @@ X_BACKUP_RESPONSE = '''<?xml version="1.0"?>
   </s:Body>
 </s:Envelope>'''
 
-DMS_DESC_RESPONSE = '''<?xml version="1.0"?>
-<root xmlns="urn:schemas-upnp-org:device-1-0" xmlns:sec="http://www.sec.co.kr/dlna" xmlns:dlna="urn:schemas-dlna-org:device-1-0">
-  <specVersion>
-    <major>1</major>
-    <minor>0</minor>
-  </specVersion>
-  <device>
-    <dlna:X_DLNADOC>DMS-1.50</dlna:X_DLNADOC>
-    <deviceType>urn:schemas-upnp-org:device:MediaServer:1</deviceType>
-    <friendlyName>%(friendly_name)s</friendlyName>
-    <manufacturer>Samsung Electronics</manufacturer>
-    <manufacturerURL>http://www.samsung.com</manufacturerURL>
-    <modelDescription>Samsung PC AutoBackup</modelDescription>
-    <modelName>WiselinkPro</modelName>
-    <modelNumber>1.0</modelNumber>
-    <modelURL>http://www.samsung.com</modelURL>
-    <serialNumber>20080818WiselinkPro</serialNumber>
-    <sec:ProductCap>smi,DCM10,getMediaInfo.sec,getCaptionInfo.sec</sec:ProductCap>
-    <UDN>uuid:%(uuid)s</UDN>
-    <serviceList>
-      <service>
-        <serviceType>urn:schemas-upnp-org:service:ContentDirectory:1</serviceType>
-        <serviceId>urn:upnp-org:serviceId:ContentDirectory</serviceId>
-        <controlURL>/upnp/control/ContentDirectory1</controlURL>
-        <eventSubURL>/upnp/event/ContentDirectory1</eventSubURL>
-        <SCPDURL>ContentDirectory1.xml</SCPDURL>
-      </service>
-      <service>
-        <serviceType>urn:schemas-upnp-org:service:ConnectionManager:1</serviceType>
-        <serviceId>urn:upnp-org:serviceId:ConnectionManager</serviceId>
-        <controlURL>/upnp/control/ConnectionManager1</controlURL>
-        <eventSubURL>/upnp/event/ConnectionManager1</eventSubURL>
-        <SCPDURL>ConnectionManager1.xml</SCPDURL>
-      </service>
-    </serviceList>
-  </device>
-</root>'''
-
 
 class Backup(object):
 
@@ -145,17 +107,24 @@ class MediaServer(Resource):
     self.config = common.LoadOrCreateConfig()
 
   def render_GET(self, request):
+    self.logger.debug('[%s] GET request for %s', request.getClientIP(),
+                      request.path)
     self.logger.debug('Request args for %s from %s: %s', request.path,
                       request.getClientIP(), request.args)
     self.logger.debug('Request headers for %s from %s: %s', request.path,
                       request.getClientIP(), request.args)
 
     if request.path == '/DMS/SamsungDmsDesc.xml':
-      self.logger.info('New connection from %s (%s)',
-                       request.getClientIP(),
+      self.logger.info('New connection from %s (%s)', request.getClientIP(),
                        request.getHeader('user-agent'))
       self.clients[request.getClientIP()] = request.getHeader('user-agent')
       response = self.GetDMSDescriptionResponse()
+    elif request.path.split('/')[-1] == 'ContentDirectory1.xml':
+      with open(os.path.join('DMS', 'ContentDirectory1.xml'), 'r') as xml_data:
+        response = xml_data.read()
+    elif request.path.split('/')[-1] == 'ConnectionManager1.xml':
+      with open(os.path.join('DMS', 'ConnectionManager1.xml'), 'r') as xml_data:
+        response = xml_data.read()
     else:
       self.logger.error('Unhandled GET request from %s: %s',
                         request.getClientIP(), request.path)
@@ -227,9 +196,10 @@ class MediaServer(Resource):
     return response
 
   def GetDMSDescriptionResponse(self):
-    response = DMS_DESC_RESPONSE % {
-        'friendly_name': self.config.get('AUTOBACKUP', 'server_name'),
-        'uuid': self.config.get('AUTOBACKUP', 'uuid')}
+    with open(os.path.join('DMS', 'SamsungDmsDesc.xml'), 'r') as dms_desc:
+      response = dms_desc.read() % {
+          'friendly_name': self.config.get('AUTOBACKUP', 'server_name'),
+          'uuid': self.config.get('AUTOBACKUP', 'uuid')}
 
     return response
 

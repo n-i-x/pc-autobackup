@@ -106,7 +106,7 @@ class SSDPServer(DatagramProtocol):
 
 def StartSSDPServer():
   logging.info('SSDPServer started')
-  reactor.listenMulticast(1900, SSDPServer())
+  reactor.listenMulticast(1900, SSDPServer(), listenMultiple=True)
   reactor.run()
 
 

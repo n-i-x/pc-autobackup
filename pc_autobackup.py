@@ -221,7 +221,7 @@ def main():
 
   resource = mediaserver.MediaServer()
   factory = Site(resource)
-  reactor.listenMulticast(1900, ssdp.SSDPServer())
+  reactor.listenMulticast(1900, ssdp.SSDPServer(), listenMultiple=True)
   logger.info('SSDPServer started')
   reactor.listenTCP(52235, factory)
   logger.info('MediaServer started')
