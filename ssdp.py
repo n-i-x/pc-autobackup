@@ -82,7 +82,8 @@ class SSDPServer(DatagramProtocol):
 
         # ST: urn:schemas-upnp-org:device:MediaServer:1
         if m.group(1) == 'ST':
-          parsed_data['discovery_type'] = m.group(2).split(':')[3]
+          if m.group(2).startswith('urn:schemas-upnp-org:device:'):
+            parsed_data['discovery_type'] = m.group(2).split(':')[3]
 
     return parsed_data
 
