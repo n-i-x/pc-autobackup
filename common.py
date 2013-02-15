@@ -55,6 +55,8 @@ def LoadOrCreateConfig():
   if not config.has_option('AUTOBACKUP', 'backup_dir'):
     config.set('AUTOBACKUP', 'backup_dir',
                os.path.expanduser('~/PCAutoBackup'))
+  if not config.has_option('AUTOBACKUP', 'create_date_subdir'):
+    config.set('AUTOBACKUP', 'create_date_subdir', '1')
   if not config.has_option('AUTOBACKUP', 'default_interface'):
     try:
       config.set('AUTOBACKUP', 'default_interface',

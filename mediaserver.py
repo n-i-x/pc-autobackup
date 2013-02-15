@@ -80,8 +80,12 @@ class Backup(object):
   def WriteObject(self, obj_id, data):
     obj_details = self.GetObjectDetails(obj_id)
 
-    obj_dir = os.path.join(self.config.get('AUTOBACKUP', 'backup_dir'),
-                           obj_details['obj_date'])
+    obj_dir = [self.config.get('AUTOBACKUP', 'backup_dir')]
+
+    if self.config.getboolean('AUTOBACKUP', 'create_date_subdir'):
+      obj_dir.append(obj_details['obj_date'])
+
+    obj_dir = os.path.join(*obj_dir)
 
     if not os.path.isdir(obj_dir):
       self.logger.info('Creating output dir %s', obj_dir)

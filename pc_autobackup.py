@@ -155,6 +155,9 @@ def main():
                     metavar='FILE')
   parser.add_option('-n', '--name', dest='server_name',
                     help='change server name', metavar='NAME')
+  parser.add_option('--no_create_date_subdir', dest='no_create_date_subdir',
+                    action='store_true', default=False,
+                    help='do not create subdirs in ouput_dir for media dates')
   parser.add_option('-o', '--output_dir', dest='output_dir',
                     help='output directory for files', metavar='DIR')
   parser.add_option('-q', '--quiet', dest='quiet', action='store_true',
@@ -188,6 +191,9 @@ def main():
   if options.bind:
     config.set('AUTOBACKUP', 'default_interface', options.bind)
     update_config = True
+  if options.no_create_date_subdir:
+    config.set('AUTOBACKUP', 'create_date_subdir', '0')
+    update_config = True
   if options.output_dir:
     config.set('AUTOBACKUP', 'backup_dir', options.output_dir)
     update_config = True
@@ -219,12 +225,14 @@ def main():
   if options.debug:
     GetSystemInfo()
 
-  resource = mediaserver.MediaServer()
-  factory = Site(resource)
   reactor.listenMulticast(1900, ssdp.SSDPServer(), listenMultiple=True)
   logger.info('SSDPServer started')
+
+  resource = mediaserver.MediaServer()
+  factory = Site(resource)
   reactor.listenTCP(52235, factory)
   logger.info('MediaServer started')
+
   reactor.run()
 
 
