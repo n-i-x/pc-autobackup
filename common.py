@@ -11,11 +11,15 @@ import socket
 import uuid
 
 CAMERA_CONFIG = {
+  'default': {'desc_file': os.path.join('dlna_web_root',
+                                        'samsungautobackupdesc.ini')},
+  'SAMSUNG DV300': {'desc_file': os.path.join('DLNA_WEB_ROOT',
+                                              'SAMSUNGAutoBackupDESC.ini')},
   'SAMSUNG WB150': {'desc_file': os.path.join('DLNA_WEB_ROOT',
                                               'SAMSUNGAUTOBACKUPDESC.INI')},
   'SAMSUNG NX1000': {'desc_file': os.path.join('dlna_web_root',
                                                'SAMSUNGAutoBackupDESC.ini')}}
-CONFIG_FILE = os.path.expanduser("~/pc_autobackup.cfg")
+CONFIG_FILE = os.path.expanduser("~/.pc_autobackup.cfg")
 CAMERA_INFO_FILE = [os.path.join('system', 'device.xml'),
                     os.path.join('SYSTEM', 'DEVICE.XML'),
                     os.path.join('SYSTEM', 'Device.xml')]

@@ -37,12 +37,9 @@ def GetCameraConfig(mountpoint):
         device_xml = f.read()
         m = common.CAMERA_MODEL.search(device_xml)
         if m:
-          camera_config = common.CAMERA_CONFIG.get(m.group(1))
-          if camera_config:
-            return camera_config
-          else:
-            logger.error('Unsupported camera: %s', m.group(1))
-            sys.exit(1)
+          camera_config = common.CAMERA_CONFIG.get(
+              m.group(1), common.CAMERA_CONFIG['default'])
+          return camera_config
 
   logger.error('Unable to determine camera model')
   sys.exit(1)
@@ -162,7 +159,7 @@ def main():
                     help='output directory for files', metavar='DIR')
   parser.add_option('-q', '--quiet', dest='quiet', action='store_true',
                     default=False, help='only log errors to console')
-  parser.add_option('--update_camera', dest='update_camera',
+  parser.add_option('--update_camera_config', dest='update_camera_config',
                     help='update camera with this servers configuration',
                     metavar='MOUNTPOINT')
   (options, args) = parser.parse_args()
@@ -213,8 +210,8 @@ def main():
     ImportCameraConfig(options.import_camera_config)
     sys.exit(0)
 
-  if options.update_camera:
-    UpdateCameraConfig(options.update_camera)
+  if options.update_camera_config:
+    UpdateCameraConfig(options.update_camera_config)
     sys.exit(0)
 
   logger = logging.getLogger('PCAutoBackup')
