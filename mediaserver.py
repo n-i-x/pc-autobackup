@@ -146,7 +146,8 @@ class MediaServer(Resource):
       return NoResource()
 
     self.logger.debug('Response: %s', response)
-    return response
+    request.setHeader("Content-Type", "text/xml; charset=utf-8")
+    return response.encode('utf-8')
 
   def render_POST(self, request):
     self.logger.debug('Request args for %s from %s: %s', request.path,
