@@ -262,6 +262,8 @@ class MediaServer(Resource):
       for k, v in res[0].attributes.items():
         didl_elements[k] = v
 
+    return didl_elements
+
   def ReceiveUpload(self, request):
     response = ''
 
