@@ -259,7 +259,7 @@ class MediaServer(Resource):
 
     res = dom.getElementsByTagName('res')
     if res:
-      for k, v in res.attributes.items():
+      for k, v in res[0].attributes.items():
         didl_elements[k] = v
 
   def ReceiveUpload(self, request):
