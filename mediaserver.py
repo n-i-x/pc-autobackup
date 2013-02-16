@@ -247,15 +247,15 @@ class MediaServer(Resource):
 
     title = dom.getElementsByTagName('dc:title')
     if title:
-      didl_elements['name'] = getText(title)
+      didl_elements['name'] = getText(title[0])
 
     date = dom.getElementsByTagName('dc:date')
     if date:
-      didl_elements['date'] = getText(date)
+      didl_elements['date'] = getText(date[0])
 
     upnp_class = dom.getElementsByTagName('upnp:class')
     if upnp_class:
-      didl_elements['class'] = getText(upnp_class)
+      didl_elements['class'] = getText(upnp_class[0])
 
     res = dom.getElementsByTagName('res')
     if res:
