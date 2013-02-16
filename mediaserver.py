@@ -166,7 +166,8 @@ class MediaServer(Resource):
 
     self.logger.debug('Sending response for %s to %s: %s', request.path,
                       request.getClientIP(), response)
-    return response
+    request.setHeader("Content-Type", "text/xml; charset=utf-8")
+    return response.encode('utf-8')
 
   def GetContentDirectoryResponse(self, request):
     self.logger.debug('Request content for %s from %s: %s', request.path,
