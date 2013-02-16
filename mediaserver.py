@@ -11,6 +11,7 @@ import os
 import random
 import re
 import string
+import xml.dom.minidom
 
 from twisted.internet import reactor
 from twisted.web.error import NoResource
@@ -20,13 +21,13 @@ from twisted.web.server import Site
 import common
 
 CREATE_OBJ = '"urn:schemas-upnp-org:service:ContentDirectory:1#CreateObject"'
-CREATE_OBJ_DIDL = re.compile(r'.*<Elements>(?P<didl>.*dc:title&gt;(?P<name>.*)&lt;/dc:title.*dc:date&gt;(?P<date>.*)&lt;/dc:date.*protocolInfo=&quot;\*:\*:(?P<type>.*):DLNA.ORG_PN.*size=&quot;(?P<size>\d+)&quot;.*)</Elements>.*')
+CREATE_OBJ_DIDL = re.compile(r'<Elements>(?P<didl>.*)</Elements>')
 CREATE_OBJ_RESPONSE = '''<?xml version="1.0"?>
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
   <s:Body>
     <u:CreateObjectResponse xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1">
       <ObjectID>%(obj_id)s</ObjectID>
-      <Result>&lt;DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp='urn:schemas-upnp-org:metadata-1-0/upnp/' xmlns:dlna="urn:schemas-dlna-org:metadata-1-0/" xmlns:sec="http://www.sec.co.kr/"&gt;&lt;item id="%(obj_id)s" parentID="%(parent_id)s" restricted="0" dlna:dlnaManaged="00000004"&gt;&lt;dc:title&gt;&lt;/dc:title&gt;&lt;res protocolInfo="http-get:*:%(obj_type)s:DLNA.ORG_PN=JPEG_LRG;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=00D00000000000000000000000000000" importUri="http://%(interface)s:52235/cd/content?didx=0_id=%(obj_id)s" dlna:resumeUpload="0" dlna:uploadedSize="0" size="%(obj_size)s"&gt;&lt;/res&gt;&lt;upnp:class&gt;object.item.imageItem&lt;/upnp:class&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</Result>
+      <Result>&lt;DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp='urn:schemas-upnp-org:metadata-1-0/upnp/' xmlns:dlna="urn:schemas-dlna-org:metadata-1-0/" xmlns:sec="http://www.sec.co.kr/"&gt;&lt;item id="%(obj_id)s" parentID="%(parent_id)s" restricted="0" dlna:dlnaManaged="00000004"&gt;&lt;dc:title&gt;&lt;/dc:title&gt;&lt;res protocolInfo="http-get:*:%(obj_type)s:%(obj_subtype)s;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=00D00000000000000000000000000000" importUri="http://%(interface)s:52235/cd/content?didx=0_id=%(obj_id)s" dlna:resumeUpload="0" dlna:uploadedSize="0" size="%(obj_size)s"&gt;&lt;/res&gt;&lt;upnp:class&gt;%(obj_class)s&lt;/upnp:class&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</Result>
     </u:CreateObjectResponse>
   </s:Body>
 </s:Envelope>'''
@@ -57,15 +58,18 @@ class Backup(object):
     obj_id = '%s_%s' % (parent_id, rand_chars)
     return (parent_id, obj_id)
 
-  def CreateObject(self, obj_name, obj_date, obj_type, obj_size):
+  def CreateObject(self, obj_class, obj_name, obj_date, obj_type, obj_size,
+                   obj_subtype):
     (parent_id, obj_id) = self._GenerateObjectID(obj_date)
     self.logger.debug('Creating Backup Object for %s (type:%s size:%s)',
                       obj_name, obj_type, obj_size)
-    self.backup_objects[obj_id] = {'obj_name': obj_name,
+    self.backup_objects[obj_id] = {'obj_class': obj_class,
                                    'obj_date': obj_date,
+                                   'obj_name': obj_name,
+                                   'obj_size': obj_size,
+                                   'obj_subtype': obj_subtype,
                                    'obj_type': obj_type,
-                                   'parent_id': parent_id,
-                                   'obj_size': obj_size}
+                                   'parent_id': parent_id}
     return obj_id
 
   def FinishBackup(self):
@@ -170,24 +174,36 @@ class MediaServer(Resource):
     elif soapaction == CREATE_OBJ:
       soap_xml = request.content.read()
 
-      m = CREATE_OBJ_DIDL.match(soap_xml)
+      m = CREATE_OBJ_DIDL.search(soap_xml)
       if m:
-        obj_name = m.group('name')
-        obj_date = m.group('date')
-        obj_type = m.group('type')
-        obj_size = m.group('size')
+        parsed_data = self.ParseDIDL(m.group('didl'))
+
+        obj_class = parsed_data.get('class')
+        obj_date = parsed_data.get('date')
+        obj_name = parsed_data.get('name')
+        obj_size = parsed_data.get('size')
+
+        try:
+          obj_type = parsed_data.get('protocolInfo').split(':')[2]
+          obj_subtype = parsed_data.get('protocolInfo').split(':')[3]
+        except IndexError:
+          self.logger.error('Invalid DIDL: %s', soap_xml)
+          return NoResource()
 
         backup = Backup()
-        obj_id = backup.CreateObject(obj_name, obj_date, obj_type, obj_size)
+        obj_id = backup.CreateObject(obj_class, obj_name, obj_date, obj_type,
+                                     obj_size, obj_subtype)
         obj_details = backup.GetObjectDetails(obj_id)
 
         self.logger.info('Ready to receive %s (%s size:%s)', obj_name, obj_type,
                          obj_size)
         response = CREATE_OBJ_RESPONSE % {
             'interface': self.config.get('AUTOBACKUP', 'default_interface'),
+            'obj_class': obj_class,
             'obj_id': obj_id,
-            'obj_type': obj_type,
             'obj_size': obj_size,
+            'obj_subtype': obj_subtype,
+            'obj_type': obj_type,
             'parent_id': obj_details['parent_id']}
     elif soapaction == X_BACKUP_DONE:
       self.logger.info('Backup complete for %s (%s)', request.getClientIP(),
@@ -206,6 +222,45 @@ class MediaServer(Resource):
           'uuid': self.config.get('AUTOBACKUP', 'uuid')}
 
     return response
+
+  def ParseDIDL(self, didl):
+    #<DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:dlna = "urn:schemas-dlna-org:metadata-1-0/">
+    #  <item id="" restricted="0" parentID="DLNA.ORG_AnyContainer" >
+    #    <dc:title>SAM_0001.JPG</dc:title>
+    #    <dc:date>2012-01-01</dc:date>
+    #    <upnp:class>object.item.imageItem</upnp:class>
+    #    <res protocolInfo="*:*:image/jpeg:DLNA.ORG_PN=JPEG_LRG;DLNA.ORG_CI=0" size="4429673" ></res>
+    #  </item>
+    #</DIDL-Lite>
+    parser = HTMLParser.HTMLParser()
+    didl = parser.unescape(didl)
+
+    didl_elements = {}
+    dom = xml.dom.minidom.parseString(didl)
+
+    def getText(node):
+      rc = []
+      for child in node.childNodes:
+        if child.nodeType == child.TEXT_NODE:
+          rc.append(child.data)
+      return ''.join(rc)
+
+    title = dom.getElementsByTagName('dc:title')
+    if title:
+      didl_elements['name'] = getText(title)
+
+    date = dom.getElementsByTagName('dc:date')
+    if date:
+      didl_elements['date'] = getText(date)
+
+    upnp_class = dom.getElementsByTagName('upnp:class')
+    if upnp_class:
+      didl_elements['class'] = getText(upnp_class)
+
+    res = dom.getElementsByTagName('res')
+    if res:
+      for k, v in res.attributes.items():
+        didl_elements[k] = v
 
   def ReceiveUpload(self, request):
     response = ''
