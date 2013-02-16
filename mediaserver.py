@@ -22,15 +22,22 @@ import common
 
 CREATE_OBJ = '"urn:schemas-upnp-org:service:ContentDirectory:1#CreateObject"'
 CREATE_OBJ_DIDL = re.compile(r'<Elements>(?P<didl>.*)</Elements>')
-CREATE_OBJ_RESPONSE = '''<?xml version="1.0"?>
-<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+CREATE_OBJ_RESPONSE = '''<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
   <s:Body>
     <u:CreateObjectResponse xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1">
       <ObjectID>%(obj_id)s</ObjectID>
-      <Result>&lt;DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp='urn:schemas-upnp-org:metadata-1-0/upnp/' xmlns:dlna="urn:schemas-dlna-org:metadata-1-0/" xmlns:sec="http://www.sec.co.kr/"&gt;&lt;item id="%(obj_id)s" parentID="%(parent_id)s" restricted="0" dlna:dlnaManaged="00000004"&gt;&lt;dc:title&gt;&lt;/dc:title&gt;&lt;res protocolInfo="http-get:*:%(obj_type)s:%(obj_subtype)s;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=00D00000000000000000000000000000" importUri="http://%(interface)s:52235/cd/content?didx=0_id=%(obj_id)s" dlna:resumeUpload="0" dlna:uploadedSize="0" size="%(obj_size)s"&gt;&lt;/res&gt;&lt;upnp:class&gt;%(obj_class)s&lt;/upnp:class&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</Result>
+      <Result>%(didl)s</Result>
     </u:CreateObjectResponse>
   </s:Body>
 </s:Envelope>'''
+
+CREATE_OBJ_RESPONSE_DIDL = '''<DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp='urn:schemas-upnp-org:metadata-1-0/upnp/' xmlns:dlna="urn:schemas-dlna-org:metadata-1-0/" xmlns:sec="http://www.sec.co.kr/">
+  <item id="%(obj_id)s" parentID="%(parent_id)s" restricted="0" dlna:dlnaManaged="00000004">
+    <dc:title></dc:title>
+    <res protocolInfo="http-get:*:%(obj_type)s:%(obj_subtype)s;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=00D00000000000000000000000000000" importUri="http://%(interface)s:52235/cd/content?didx=0_id=%(obj_id)s" dlna:resumeUpload="0" dlna:uploadedSize="0" size="%(obj_size)s"></res>
+    <upnp:class>%(obj_class)s</upnp:class>
+  </item>
+</DIDL-Lite>'''
 
 X_BACKUP_DONE = '"urn:schemas-upnp-org:service:ContentDirectory:1#X_BACKUP_DONE"'
 X_BACKUP_START = '"urn:schemas-upnp-org:service:ContentDirectory:1#X_BACKUP_START"'
@@ -197,7 +204,8 @@ class MediaServer(Resource):
 
         self.logger.info('Ready to receive %s (%s size:%s)', obj_name, obj_type,
                          obj_size)
-        response = CREATE_OBJ_RESPONSE % {
+
+        response_dict = {
             'interface': self.config.get('AUTOBACKUP', 'default_interface'),
             'obj_class': obj_class,
             'obj_id': obj_id,
@@ -205,6 +213,10 @@ class MediaServer(Resource):
             'obj_subtype': obj_subtype,
             'obj_type': obj_type,
             'parent_id': obj_details['parent_id']}
+
+        didl = CREATE_OBJ_RESPONSE_DIDL % response_dict
+        response_dict[didl] = common.EscapeHTML(didl)
+        response = CREATE_OBJ_RESPONSE % response_dict
     elif soapaction == X_BACKUP_DONE:
       self.logger.info('Backup complete for %s (%s)', request.getClientIP(),
                        self.clients[request.getClientIP()])

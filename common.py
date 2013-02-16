@@ -38,6 +38,17 @@ LOG_DEFAULTS = {'level': logging.INFO,
                 'datefmt': LOG_DATE_FMT}
 
 
+def EscapeHTML(html):
+  html_codes = (('&', '&amp;'),
+                ('<', '&lt;'),
+                ('>', '&gt;'),
+                ('"', '&quot;'),
+                ("'", '&apos;'))
+  for old, new in html_codes:
+    html = html.replace(old, new)
+  
+  return html
+
 def GenerateUUID():
   uuid_prefix = '4a682b0b-0361-dbae-6155'
   uuid_suffix = str(uuid.uuid4()).split('-')[-1]
