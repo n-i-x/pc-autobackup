@@ -215,7 +215,7 @@ class MediaServer(Resource):
             'parent_id': obj_details['parent_id']}
 
         didl = CREATE_OBJ_RESPONSE_DIDL % response_dict
-        response_dict[didl] = common.EscapeHTML(didl)
+        response_dict['didl'] = common.EscapeHTML(didl)
         response = CREATE_OBJ_RESPONSE % response_dict
     elif soapaction == X_BACKUP_DONE:
       self.logger.info('Backup complete for %s (%s)', request.getClientIP(),
