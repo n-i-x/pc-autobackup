@@ -22,7 +22,8 @@ import common
 
 CREATE_OBJ = '"urn:schemas-upnp-org:service:ContentDirectory:1#CreateObject"'
 CREATE_OBJ_DIDL = re.compile(r'<Elements>(?P<didl>.*)</Elements>')
-CREATE_OBJ_RESPONSE = '''<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+CREATE_OBJ_RESPONSE = '''<?xml version="1.0"?>
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
   <s:Body>
     <u:CreateObjectResponse xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1">
       <ObjectID>%(obj_id)s</ObjectID>
