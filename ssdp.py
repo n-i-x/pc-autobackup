@@ -119,7 +119,8 @@ class SSDPServer(DatagramProtocol):
 
     address_info = ':'.join([str(x) for x in address])
     self.logger.info('Sending SSDP response to %s', address_info)
-    self.logger.debug('Sending SSDP response to %s: %r', address_info, response)
+    self.logger.debug('Sending SSDP response to %s: %r', address_info,
+                      response)
     self.transport.write(response, address)
 
 
