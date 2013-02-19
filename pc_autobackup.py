@@ -6,6 +6,7 @@
 __author__ = 'jeff@rebeiro.net (Jeff Rebeiro)'
 
 import logging
+from logging.handlers import TimedRotatingFileHandler
 import optparse
 import os
 import platform
@@ -23,7 +24,15 @@ import mediaserver
 
 
 def GetCameraConfig(mountpoint):
-  logger = logging.getLogger('PCAutoBackup')
+  """Get configuration options for a camera.
+
+  Args:
+    mountpoint: A string containing the path to the cameras SD card
+
+  Returns:
+    A dict containing the cameras config
+  """
+  logger = logging.getLogger('pc_autobackup')
 
   device_file = None
   for f in common.CAMERA_INFO_FILE:
@@ -46,7 +55,8 @@ def GetCameraConfig(mountpoint):
 
 
 def GetSystemInfo():
-  logger = logging.getLogger('PCAutoBackup')
+  """Log basic system information to the debug logger."""
+  logger = logging.getLogger('pc_autobackup')
   logger.debug('Command-line: %s', ' '.join(sys.argv))
   logger.debug('Python Version: %s', platform.python_version())
   logger.debug('System Information (platform): %s', platform.platform())
@@ -62,7 +72,12 @@ def GetSystemInfo():
 
 
 def ImportCameraConfig(mountpoint):
-  logger = logging.getLogger('PCAutoBackup')
+  """Import the PC AutoBackup settings from a camera.
+
+  Args:
+    mountpoint: A string containing the path to the cameras SD card
+  """
+  logger = logging.getLogger('pc_autobackup')
 
   camera_config = GetCameraConfig(mountpoint)
   desc_file = os.path.join(mountpoint, camera_config['desc_file'])
@@ -77,14 +92,14 @@ def ImportCameraConfig(mountpoint):
       if m:
         friendly_name = m.group(1)
       else:
-        logging.error('Unable to determine server name from camera config')
+        logger.error('Unable to determine server name from camera config')
         sys.exit(1)
 
       m = common.DESC_UUID.search(desc_data)
       if m:
         uuid = m.group(1)
       else:
-        logging.error('Unable to determine server name from camera config')
+        logger.error('Unable to determine server name from camera config')
         sys.exit(1)
 
       config.set('AUTOBACKUP', 'server_name', friendly_name)
@@ -106,7 +121,13 @@ def ImportCameraConfig(mountpoint):
 
 
 def UpdateCameraConfig(mountpoint, create_desc_file=False):
-  logger = logging.getLogger('PCAutoBackup')
+  """Update the PC AutoBackup settings on a camera.
+
+  Args:
+    mountpoint: A string containing the path to the cameras SD card
+    create_desc_file: True if the settings file should be created
+  """
+  logger = logging.getLogger('pc_autobackup')
 
   mac_address = hex(uuid.getnode())
   mac_address = re.findall('..', mac_address)
@@ -117,7 +138,7 @@ def UpdateCameraConfig(mountpoint, create_desc_file=False):
 
   if create_desc_file:
     with open(desc_file, 'w+') as f:
-      logging.info('Creating %s', desc_file)
+      logger.info('Creating %s', desc_file)
 
   if os.path.isfile(desc_file):
     with open(desc_file, 'wb') as f:
@@ -147,8 +168,8 @@ def main():
   parser.add_option('--import_camera_config', dest='import_camera_config',
                     help='update server with cameras configuration',
                     metavar='MOUNTPOINT')
-  parser.add_option('--log_file', dest='log_file', default='backup.log',
-                    help='change output log file (default: backup.log)',
+  parser.add_option('--log_file', dest='log_file', default='autobackup.log',
+                    help='change output log file (default: autobackup.log)',
                     metavar='FILE')
   parser.add_option('-n', '--name', dest='server_name',
                     help='change server name', metavar='NAME')
@@ -164,23 +185,34 @@ def main():
                     metavar='MOUNTPOINT')
   (options, args) = parser.parse_args()
 
-  console_logging_options = common.LOG_DEFAULTS.copy()
-  logging_options = common.LOG_DEFAULTS.copy()
+  log_opts = common.LOG_DEFAULTS.copy()
+  lf_log_opts = common.LOG_DEFAULTS.copy()
 
   if options.quiet:
-    console_logging_options['level'] = logging.WARN
+    log_opts['level'] = logging.WARN
   if options.debug:
-    logging_options['level'] = logging.DEBUG
+    print 'enabling debug'
+    lf_log_opts['level'] = logging.DEBUG
 
-  logging_options['filename'] = options.log_file
+  logger = logging.getLogger('pc_autobackup')
+  logger.setLevel(logging.DEBUG)
 
-  logging.basicConfig(**logging_options)
+  lf_handler = TimedRotatingFileHandler(options.log_file,
+                                        when="midnight",
+                                        backupCount=3)
+  lf_handler.setLevel(lf_log_opts['level'])
+  lf_log_opts['format'] = '%(asctime)s[%(name)s] %(levelname)s:%(message)s'
+  formatter = logging.Formatter(lf_log_opts['format'],
+                                lf_log_opts['datefmt'])
+  lf_handler.setFormatter(formatter)
+  logger.addHandler(lf_handler)
 
   console = logging.StreamHandler()
-  console.setLevel(console_logging_options['level'])
-  formatter = logging.Formatter('%(asctime)s %(message)s', common.LOG_DATE_FMT)
+  console.setLevel(log_opts['level'])
+  formatter = logging.Formatter(log_opts['format'],
+                                log_opts['datefmt'])
   console.setFormatter(formatter)
-  logging.getLogger('').addHandler(console)
+  logger.addHandler(console)
 
   config = common.LoadOrCreateConfig()
   update_config = False
@@ -214,7 +246,6 @@ def main():
     UpdateCameraConfig(options.update_camera_config)
     sys.exit(0)
 
-  logger = logging.getLogger('PCAutoBackup')
   logger.info('PCAutoBackup started on %s', config.get('AUTOBACKUP',
                                                        'default_interface'))
   logger.info('Server name: %s', config.get('AUTOBACKUP', 'server_name'))

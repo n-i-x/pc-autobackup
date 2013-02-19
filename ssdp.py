@@ -21,7 +21,7 @@ MSEARCH_DATA = re.compile(r'^([^:]+):\s+(.*)')
 class SSDPServer(DatagramProtocol):
 
   def __init__(self):
-    self.logger = logging.getLogger('SSDPServer')
+    self.logger = logging.getLogger('pc_autobackup.ssdp')
     self.config = common.LoadOrCreateConfig()
 
   def startProtocol(self):
@@ -45,7 +45,18 @@ class SSDPServer(DatagramProtocol):
         self.SendSSDPResponse(address)
 
   def GenerateSSDPResponse(self, response_type, ip_address, uuid,
-                           notify_fields=None):
+                           notify_fields={}):
+    """Generate an SSDP response.
+
+    Args:
+      response_type: One of m-search or notify
+      ip_address: IP address to use for the response
+      uuid: UUID to use for the response
+      notify_fields: A dictionary containing NT, NTS, and USN fields
+
+    Returns:
+      A string containing an SSDP response
+    """
     location = 'LOCATION: http://%s:52235/DMS/SamsungDmsDesc.xml' % ip_address
     if response_type == 'm-search':
       response = ['HTTP/1.1 200 OK',
@@ -70,6 +81,14 @@ class SSDPServer(DatagramProtocol):
     return '\r\n'.join(response)
 
   def ParseSSDPDiscovery(self, datagram):
+    """Parse an SSDP UDP datagram.
+
+    Args:
+      datagram: A string containing an SSDP request data
+
+    Returns:
+      A dict containing the parsed data
+    """
     parsed_data = {}
 
     for line in datagram.splitlines():
@@ -100,11 +119,15 @@ class SSDPServer(DatagramProtocol):
 
     address_info = ':'.join([str(x) for x in address])
     self.logger.info('Sending SSDP response to %s', address_info)
-    self.logger.debug('Response: %r', response)
+    self.logger.debug('Sending SSDP response to %s: %r', address_info, response)
     self.transport.write(response, address)
 
 
 def StartSSDPServer():
+  """Start an SSDP server.
+
+  Used for debugging/testing just an SSDP server.
+  """
   logging.info('SSDPServer started')
   reactor.listenMulticast(1900, SSDPServer(), listenMultiple=True)
   reactor.run()

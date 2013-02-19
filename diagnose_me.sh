@@ -71,7 +71,7 @@ echo
 read -p "Press [Enter] key once AutoBackup fails/finishes..."
 
 echo "Shutting down pc_autobackup..."
-pkill pc_autobackup.py
+pkill -f pc_autobackup
 
 echo "Shutting down network capture..."
 pkill tcpdump

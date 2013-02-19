@@ -36,13 +36,21 @@ ServerFlag=1
 '''
 
 LOG_DATE_FMT = '[%m/%d/%Y %I:%M %p]'
-LOG_FMT = '%(asctime)s[%(name)s] %(levelname)s:%(message)s'
+LOG_FMT = '%(asctime)s %(message)s'
 LOG_DEFAULTS = {'level': logging.INFO,
                 'format': LOG_FMT,
                 'datefmt': LOG_DATE_FMT}
 
 
 def EscapeHTML(html):
+  """Escape characters in the given HTML.
+
+  Args:
+    html: A string containing HTML to be escaped
+
+  Returns:
+    A string containing escaped HTML
+  """
   html_codes = (('&', '&amp;'),
                 ('<', '&lt;'),
                 ('>', '&gt;'),
@@ -54,18 +62,29 @@ def EscapeHTML(html):
   return html
 
 def GenerateUUID():
+  """Generate a UUID.
+
+  Returns:
+    A string containing a valid UUID
+  """
   uuid_prefix = '4a682b0b-0361-dbae-6155'
   uuid_suffix = str(uuid.uuid4()).split('-')[-1]
   return '-'.join([uuid_prefix, uuid_suffix])
 
 
 def LoadOrCreateConfig():
-  """Load an existing configuration or create one."""
+  """Load an existing configuration or create one.
+
+  Returns:
+    ConfigParser.RawConfigParser
+  """
+  logger = logging.getLogger('pc_autobackup.common')
+
   config = ConfigParser.RawConfigParser()
   config.read(CONFIG_FILE)
 
   if not config.has_section('AUTOBACKUP'):
-    logging.info('Creating configuration file %s', CONFIG_FILE)
+    logger.info('Creating configuration file %s', CONFIG_FILE)
     config.add_section('AUTOBACKUP')
   if not config.has_option('AUTOBACKUP', 'backup_dir'):
     config.set('AUTOBACKUP', 'backup_dir',
@@ -77,7 +96,7 @@ def LoadOrCreateConfig():
       config.set('AUTOBACKUP', 'default_interface',
                  socket.gethostbyname(socket.gethostname()))
     except socket.error:
-      logging.error('Unable to determine IP address. Please set manually!')
+      logger.error('Unable to determine IP address. Please set manually!')
       config.set('AUTOBACKUP', 'default_interface', '127.0.0.1')
   if not config.has_option('AUTOBACKUP', 'server_name'):
     config.set('AUTOBACKUP', 'server_name', '[PC]AutoBackup')
