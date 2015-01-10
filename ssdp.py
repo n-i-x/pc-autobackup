@@ -65,7 +65,7 @@ class SSDPServer(DatagramProtocol):
                   location,
                   'SERVER: MS-Windows/XP UPnP/1.0 PROTOTYPE/1.0',
                   'ST: urn:schemas-upnp-org:device:MediaServer:1',
-                  'USN: %s::urn:schemas-upnp-org:device:MediaServer:1' % uuid]
+                  'USN: uuid:%s::urn:schemas-upnp-org:device:MediaServer:1' % uuid]
     elif response_type == 'notify':
       response = ['NOTIFY * HTTP/1.1',
                   'HOST: 239.255.255.250:1900',
@@ -77,6 +77,7 @@ class SSDPServer(DatagramProtocol):
                   'SERVER: MS-Windows/XP UPnP/1.0 PROTOTYPE/1.0']
 
     response.append('CONTENT-LENGTH: 0')
+    response.append('')
     response.append('')
     return '\r\n'.join(response)
 
