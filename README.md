@@ -19,16 +19,16 @@ If you'd like to donate to the development of PC AutoBackup use the following li
 ## Configuring your camera ##
 > ### If your camera has already been setup with PC AutoBackup for Windows ###
     * Mount your camera's SD card
-    * pc\_autobackup.py --import\_camera\_config=/path/to/camera
+    * pc_autobackup.py --import_camera_config=/path/to/camera
     * Uninstall PC AutoBackup on Windows **_(failure to do so will prevent this server from working)_**
 > ### If you have never setup PC AutoBackup before ###
     * Mount your camera's SD card
-    * pc\_autobackup.py --create\_camera\_config=/path/to/camera
+    * pc_autobackup.py --create_camera_config=/path/to/camera
 
 ## Starting the server ##
-  * pc\_autobackup.py
+  * pc_autobackup.py
 
-> See _pc\_autobackup.py --help_ for more options
+> See _pc_autobackup.py --help_ for more options
 
 ## **Tested with the following cameras:** ##
 
