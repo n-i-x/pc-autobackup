@@ -19,6 +19,8 @@ CAMERA_CONFIG = {
                                               'SAMSUNGAutoBackupDESC.ini')},
   'SAMSUNG WB150': {'desc_file': os.path.join('DLNA_WEB_ROOT',
                                               'SAMSUNGAUTOBACKUPDESC.INI')},
+  'SAMSUNG WB350F': {'desc_file': os.path.join('DLNA_WEB_ROOT',
+                                              'SAMSUNGAutoBackupDESC.ini')},
   'SAMSUNG NX1000': {'desc_file': os.path.join('dlna_web_root',
                                                'SAMSUNGAutoBackupDESC.ini')}}
 CONFIG_FILE = os.path.expanduser("~/.pc_autobackup.cfg")
