@@ -183,6 +183,8 @@ def main():
   parser.add_option('--update_camera_config', dest='update_camera_config',
                     help='update camera with this servers configuration',
                     metavar='MOUNTPOINT')
+  parser.add_option('--config_file', dest='config_file',
+                    help='change config file location', metavar='FILE')
   (options, args) = parser.parse_args()
 
   log_opts = common.LOG_DEFAULTS.copy()
@@ -213,6 +215,9 @@ def main():
                                 log_opts['datefmt'])
   console.setFormatter(formatter)
   logger.addHandler(console)
+
+  if options.config_file:
+    common.CONFIG_FILE = options.config_file
 
   config = common.LoadOrCreateConfig()
   update_config = False
