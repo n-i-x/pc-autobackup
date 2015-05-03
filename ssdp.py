@@ -8,6 +8,7 @@ __author__ = 'jeff@rebeiro.net (Jeff Rebeiro)'
 import ConfigParser
 import logging
 import re
+import socket
 
 from twisted.internet import reactor
 from twisted.internet.protocol import DatagramProtocol
@@ -113,9 +114,9 @@ class SSDPServer(DatagramProtocol):
     Args:
       address: A tuple of destination IP (string) and port (int)
     """
+    host_ip,host_port = self.GetHostAddress(address)
     response = self.GenerateSSDPResponse('m-search',
-                                         self.config.get('AUTOBACKUP',
-                                                         'default_interface'),
+                                         host_ip,
                                          self.config.get('AUTOBACKUP', 'uuid'))
 
     address_info = ':'.join([str(x) for x in address])
@@ -124,6 +125,18 @@ class SSDPServer(DatagramProtocol):
                       response)
     self.transport.write(response, address)
 
+  def GetHostAddress(self, address):
+    """Get host address used when communicating with given udp address.
+
+    Args:
+      address: A tuple of destination IP (string) and port (int)
+
+    Returns:
+      A tuple of host IP (string) and port (int)
+    """
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(address)
+    return s.getsockname()
 
 def StartSSDPServer():
   """Start an SSDP server.
