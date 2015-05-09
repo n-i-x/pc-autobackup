@@ -23,6 +23,7 @@ CAMERA_CONFIG = {
                                               'SAMSUNGAutoBackupDESC.ini')},
   'SAMSUNG NX1000': {'desc_file': os.path.join('dlna_web_root',
                                                'SAMSUNGAutoBackupDESC.ini')}}
+BASEDIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_FILE = os.path.expanduser("~/.pc_autobackup.cfg")
 CAMERA_INFO_FILE = [os.path.join('system', 'device.xml'),
                     os.path.join('SYSTEM', 'DEVICE.XML'),
