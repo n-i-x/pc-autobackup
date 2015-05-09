@@ -265,7 +265,7 @@ class MediaServer(Resource):
                          obj_size)
 
         response_dict = {
-            'interface': self.config.get('AUTOBACKUP', 'default_interface'),
+            'interface': request.getHost().host,
             'obj_class': obj_class,
             'obj_id': obj_id,
             'obj_size': obj_size,
