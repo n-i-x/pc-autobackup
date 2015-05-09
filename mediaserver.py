@@ -172,10 +172,10 @@ class MediaServer(Resource):
       self.clients[request.getClientIP()] = request.getHeader('user-agent')
       response = self.GetDMSDescriptionResponse()
     elif request.path.split('/')[-1] == 'ContentDirectory1.xml':
-      with open(os.path.join('DMS', 'ContentDirectory1.xml'), 'r') as xml_data:
+      with open(os.path.join(common.BASEDIR, 'DMS', 'ContentDirectory1.xml'), 'r') as xml_data:
         response = xml_data.read()
     elif request.path.split('/')[-1] == 'ConnectionManager1.xml':
-      with open(os.path.join('DMS', 'ConnectionManager1.xml'), 'r') as xml_data:
+      with open(os.path.join(common.BASEDIR, 'DMS', 'ConnectionManager1.xml'), 'r') as xml_data:
         response = xml_data.read()
     else:
       self.logger.error('Unhandled GET request from %s: %s',
@@ -293,7 +293,7 @@ class MediaServer(Resource):
     Returns:
       A string containing the XML contents
     """
-    with open(os.path.join('DMS', 'SamsungDmsDesc.xml'), 'r') as dms_desc:
+    with open(os.path.join(common.BASEDIR, 'DMS', 'SamsungDmsDesc.xml'), 'r') as dms_desc:
       response = dms_desc.read() % {
           'friendly_name': self.config.get('AUTOBACKUP', 'server_name'),
           'uuid': self.config.get('AUTOBACKUP', 'uuid')}
