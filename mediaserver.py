@@ -54,9 +54,9 @@ class Backup(object):
 
   backup_objects = {}
 
-  def __init__(self):
+  def __init__(self, config_file=None):
     self.logger = logging.getLogger('pc_autobackup.mediaserver.backup')
-    self.config = common.LoadOrCreateConfig()
+    self.config = common.LoadOrCreateConfig(config_file)
 
   def _GenerateObjectID(self, obj_date, length=10):
     """Generate an ObjectID for a new backup item.
@@ -153,9 +153,10 @@ class MediaServer(Resource):
   clients = {}
   isLeaf = True
 
-  def __init__(self):
+  def __init__(self, config_file=None):
     self.logger = logging.getLogger('pc_autobackup.mediaserver')
-    self.config = common.LoadOrCreateConfig()
+    self.config = common.LoadOrCreateConfig(config_file)
+    self.config_file = config_file
 
   def render_GET(self, request):
     if request.path != '/favicon.ico':
@@ -256,7 +257,7 @@ class MediaServer(Resource):
           request.setResponseCode(404)
           return ''
 
-        backup = Backup()
+        backup = Backup(self.config_file)
         obj_id = backup.CreateObject(obj_class, obj_date, obj_name, obj_size,
                                      obj_subtype, obj_type)
         obj_details = backup.GetObjectDetails(obj_id)

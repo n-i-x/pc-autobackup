@@ -20,9 +20,9 @@ MSEARCH_DATA = re.compile(r'^([^:]+):\s+(.*)')
 
 class SSDPServer(DatagramProtocol):
 
-  def __init__(self):
+  def __init__(self, config_file=None):
     self.logger = logging.getLogger('pc_autobackup.ssdp')
-    self.config = common.LoadOrCreateConfig()
+    self.config = common.LoadOrCreateConfig(config_file)
 
   def startProtocol(self):
     self.transport.setTTL(5)

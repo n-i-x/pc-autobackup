@@ -74,19 +74,22 @@ def GenerateUUID():
   return '-'.join([uuid_prefix, uuid_suffix])
 
 
-def LoadOrCreateConfig():
+def LoadOrCreateConfig(config_file=None):
   """Load an existing configuration or create one.
 
   Returns:
     ConfigParser.RawConfigParser
   """
+  if not config_file:
+    config_file = CONFIG_FILE
+
   logger = logging.getLogger('pc_autobackup.common')
 
   config = ConfigParser.RawConfigParser()
-  config.read(CONFIG_FILE)
+  config.read(config_file)
 
   if not config.has_section('AUTOBACKUP'):
-    logger.info('Creating configuration file %s', CONFIG_FILE)
+    logger.info('Creating configuration file %s', config_file)
     config.add_section('AUTOBACKUP')
   if not config.has_option('AUTOBACKUP', 'backup_dir'):
     config.set('AUTOBACKUP', 'backup_dir',
@@ -105,8 +108,8 @@ def LoadOrCreateConfig():
   if not config.has_option('AUTOBACKUP', 'uuid'):
     config.set('AUTOBACKUP', 'uuid', GenerateUUID())
 
-  with open(CONFIG_FILE, 'wb') as config_file:
-    config.write(config_file)
+  with open(config_file, 'wb') as file:
+    config.write(file)
 
   return config
   
