@@ -14,7 +14,7 @@ CAMERA_CONFIG = {
   'default': {'desc_file': os.path.join('dlna_web_root',
                                         'samsungautobackupdesc.ini')},
   'SAMSUNG EX2': {'desc_file': os.path.join('dlna_web_root',
-                                              'SAMSUNGAutoBackupDESC.ini')},
+                                            'SAMSUNGAutoBackupDESC.ini')},
   'SAMSUNG DV300': {'desc_file': os.path.join('DLNA_WEB_ROOT',
                                               'SAMSUNGAutoBackupDESC.ini')},
   'SAMSUNG WB150': {'desc_file': os.path.join('DLNA_WEB_ROOT',
