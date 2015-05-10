@@ -42,6 +42,8 @@ class SSDPServer(DatagramProtocol):
       else:
         self.logger.debug('Received SSDP M-SEARCH from %s', address_info)
 
+      self.logger.debug('Received SSDP M-SEARCH on interface %s', self.GetHostAddress(address)[0])
+
       if msearch_data.get('discovery_type') == 'MediaServer':
         self.SendSSDPResponse(address)
 
