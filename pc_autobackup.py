@@ -246,8 +246,13 @@ def main():
     UpdateCameraConfig(options.update_camera_config)
     sys.exit(0)
 
-  logger.info('PCAutoBackup started on %s', config.get('AUTOBACKUP',
-                                                       'default_interface'))
+  if config.has_option('AUTOBACKUP', 'default_interface'):
+    interface = config.get('AUTOBACKUP', 'default_interface')
+    logger.info('PCAutoBackup started on %s', interface)
+  else:
+    interface = ""
+    logger.info('PCAutoBackup started on all interfaces')
+
   logger.info('Server name: %s', config.get('AUTOBACKUP', 'server_name'))
 
   if options.debug:
@@ -258,7 +263,7 @@ def main():
 
   resource = mediaserver.MediaServer()
   factory = Site(resource)
-  reactor.listenTCP(52235, factory)
+  reactor.listenTCP(52235, factory, interface=interface)
   logger.info('MediaServer started')
 
   reactor.run()

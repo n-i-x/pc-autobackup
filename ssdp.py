@@ -42,7 +42,12 @@ class SSDPServer(DatagramProtocol):
       else:
         self.logger.debug('Received SSDP M-SEARCH from %s', address_info)
 
-      self.logger.debug('Received SSDP M-SEARCH on interface %s', self.GetHostAddress(address)[0])
+      host_ip,host_port = self.GetHostAddress(address)
+      self.logger.debug('Received SSDP M-SEARCH on interface %s', host_ip)
+
+      if self.config.has_option('AUTOBACKUP', 'default_interface'):
+        if self.config.get('AUTOBACKUP', 'default_interface') != host_ip:
+          return
 
       if msearch_data.get('discovery_type') == 'MediaServer':
         self.SendSSDPResponse(address)

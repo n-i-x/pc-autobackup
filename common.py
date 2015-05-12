@@ -93,13 +93,6 @@ def LoadOrCreateConfig():
                os.path.expanduser('~/PCAutoBackup'))
   if not config.has_option('AUTOBACKUP', 'create_date_subdir'):
     config.set('AUTOBACKUP', 'create_date_subdir', '1')
-  if not config.has_option('AUTOBACKUP', 'default_interface'):
-    try:
-      config.set('AUTOBACKUP', 'default_interface',
-                 socket.gethostbyname(socket.gethostname()))
-    except socket.error:
-      logger.error('Unable to determine IP address. Please set manually!')
-      config.set('AUTOBACKUP', 'default_interface', '127.0.0.1')
   if not config.has_option('AUTOBACKUP', 'server_name'):
     config.set('AUTOBACKUP', 'server_name', '[PC]AutoBackup')
   if not config.has_option('AUTOBACKUP', 'uuid'):
