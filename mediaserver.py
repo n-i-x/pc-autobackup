@@ -373,7 +373,7 @@ class MediaServer(Resource):
     response = ''
 
     obj_id = request.args['didx'][0].split('=')[1]
-    backup = Backup()
+    backup = Backup(self.config_file)
 
     data = request.content.read()
     backup.WriteObject(obj_id, data)
