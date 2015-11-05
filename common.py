@@ -22,12 +22,16 @@ CAMERA_CONFIG = {
   'SAMSUNG WB350F': {'desc_file': os.path.join('DLNA_WEB_ROOT',
                                               'SAMSUNGAutoBackupDESC.ini')},
   'SAMSUNG NX1000': {'desc_file': os.path.join('dlna_web_root',
+                                               'SAMSUNGAutoBackupDESC.ini')},
+  'SAMSUNG NX500': {'desc_file': os.path.join('dlna_web_root',
                                                'SAMSUNGAutoBackupDESC.ini')}}
+
 BASEDIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_FILE = os.path.expanduser("~/.pc_autobackup.cfg")
 CAMERA_INFO_FILE = [os.path.join('system', 'device.xml'),
                     os.path.join('SYSTEM', 'DEVICE.XML'),
-                    os.path.join('SYSTEM', 'Device.xml')]
+                    os.path.join('SYSTEM', 'Device.xml'),
+                    os.path.join('config', 'RVF', 'xml', 'DeviceDescription.xml')]
 CAMERA_MODEL = re.compile(r'<BaseModelName\s*value="(.*)"\s*/>')
 
 DESC_SERVER_NAME = re.compile(r'friendlyName\s*=\s*(.*)')
