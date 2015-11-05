@@ -61,8 +61,6 @@ def GetCameraConfig(mountpoint):
           camera_config = common.CAMERA_CONFIG.get(
               m.group(1), common.CAMERA_CONFIG['default'])
           return camera_config
-	else:
-          tree = ET.parse('DeviceDescription.xml')
 
   logger.error('Unable to determine camera model')
   sys.exit(1)
