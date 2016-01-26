@@ -165,6 +165,7 @@ class MediaServer(Resource):
                         request.getClientIP(), request.args)
       self.logger.debug('Request headers for %s from %s: %s', request.path,
                         request.getClientIP(), request.args)
+      self.logger.debug('Request came on interface %s', request.getHost().host)
 
     if request.path == '/DMS/SamsungDmsDesc.xml':
       self.logger.info('New connection from %s (%s)', request.getClientIP(),
@@ -196,6 +197,7 @@ class MediaServer(Resource):
                       request.getClientIP(), request.args)
     self.logger.debug('Request headers for %s from %s: %s', request.path,
                       request.getClientIP(), request.args)
+    self.logger.debug('Request came on interface %s', request.getHost().host)
 
     if request.path == '/cd/content':
       response = self.ReceiveUpload(request)
@@ -265,7 +267,7 @@ class MediaServer(Resource):
                          obj_size)
 
         response_dict = {
-            'interface': self.config.get('AUTOBACKUP', 'default_interface'),
+            'interface': request.getHost().host,
             'obj_class': obj_class,
             'obj_id': obj_id,
             'obj_size': obj_size,
