@@ -41,6 +41,7 @@ If you'd like to donate to the development of PC AutoBackup use the following li
 
 ## **Tested on the following OS:** ##
 
+  * Arch 64-bit
   * Ubuntu 12.04 (precise) 32/64-bit
   * Mac OS X 10.8.2 (Mountain Lion)
 
@@ -48,7 +49,7 @@ If you'd like to donate to the development of PC AutoBackup use the following li
 
   * Python 2.7.2
   * Python 2.7.3
-
+  * Python 2.7.11
 
 ---
 
