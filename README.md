@@ -38,6 +38,7 @@ If you'd like to donate to the development of PC AutoBackup use the following li
   * WB350F
   * ST200F
   * NX2000
+  * NX300
   * Does it work with your camera? Send me a pull request editing this README.
 
 ## **Tested on the following OS:** ##
