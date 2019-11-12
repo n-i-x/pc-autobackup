@@ -37,6 +37,7 @@ If you'd like to donate to the development of PC AutoBackup use the following li
   * WB150F
   * WB350F
   * ST200F
+  * NX2000
   * NX300
   * Does it work with your camera? Send me a pull request editing this README.
 
@@ -44,6 +45,7 @@ If you'd like to donate to the development of PC AutoBackup use the following li
 
   * Arch 64-bit
   * Ubuntu 12.04 (precise) 32/64-bit
+  * Ubuntu 16.04 (xenial) 64-bit
   * Mac OS X 10.8.2 (Mountain Lion)
 
 ## **Tested on the following Python versions:** ##
@@ -51,6 +53,7 @@ If you'd like to donate to the development of PC AutoBackup use the following li
   * Python 2.7.2
   * Python 2.7.3
   * Python 2.7.11
+  * Python 2.7.12
 
 ---
 
