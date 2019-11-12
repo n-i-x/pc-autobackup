@@ -22,6 +22,8 @@ import common
 import ssdp
 import mediaserver
 
+import xml.etree.ElementTree as ET
+
 
 def GetCameraConfig(mountpoint):
   """Get configuration options for a camera.
@@ -40,6 +42,16 @@ def GetCameraConfig(mountpoint):
       device_file = os.path.join(mountpoint, f)
       break
 
+  if 'DeviceDescription.xml' in device_file:
+    tree = ET.parse(device_file)
+    root = tree.getroot()
+    for tag in root.findall('./{urn:schemas-upnp-org:device-1-0}device/{urn:schemas-upnp-org:device-1-0}friendlyName'):
+      camera = tag.text
+
+    model = camera.split(']')[1]
+    camera_config = common.CAMERA_CONFIG.get( "SAMSUNG %s" % (model), common.CAMERA_CONFIG['default'])
+    return camera_config
+  
   if device_file:
     if os.path.isfile(device_file):
       with open(device_file, 'r') as f:
